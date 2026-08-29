@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/png" href="/assets/zapper_icon.png">
+  <title>Zapper — plan i dziennik</title>
+  <style>html,body{margin:0;background:#f5f6f2;color:#16211d}.loading-screen{background:#17231f;color:#fff}</style>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="loading-screen" id="loading-screen">
+    <img class="loading-mark" src="/assets/zapper_icon.png" alt="">
+    <p>Otwieranie dziennika…</p>
+  </div>
+
+  <div class="app-shell" aria-hidden="true" id="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="brand-mark" src="/assets/zapper_icon.png" alt="" aria-hidden="true">
+        <div>
+          <strong>Zapper</strong>
+          <span>Plan i dziennik</span>
+        </div>
+      </div>
+
+      <nav class="primary-nav" aria-label="Główna nawigacja">
+        <button class="nav-item is-active" data-view="today">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v3m14-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h3v3H8v-3Z"/></svg>
+          <span>Dzisiaj</span>
+        </button>
+        <button class="nav-item" data-view="device">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v5m8-5v5M6 8h12v4a6 6 0 0 1-12 0V8Zm6 10v3m-3 0h6"/></svg>
+          <span>Urządzenie</span>
+          <i class="device-nav-dot" id="device-nav-dot" aria-label="Stan urządzenia"></i>
+        </button>
+        <button class="nav-item" data-view="schedule">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5V4Zm4-2v4m6-4v4M5 9h14M8 13h3m2 0h3m-8 4h3m2 0h3"/></svg>
+          <span>Harmonogram</span>
+        </button>
+        <button class="nav-item" data-view="profiles">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m6.5-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7.5 1v6m-3-3h6"/></svg>
+          <span>Profile</span>
+          <i class="dirty-dot" id="profiles-dirty" aria-label="Niezapisane zmiany"></i>
+        </button>
+        <button class="nav-item" data-view="history">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2L4 8m0-5v5h5m3-2v6l4 2"/></svg>
+          <span>Historia</span>
+        </button>
+        <button class="nav-item" data-view="archive">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4V7Zm-1-3h18v3H3V4Zm6 7h6"/></svg>
+          <span>Archiwum</span>
+        </button>
+        <button class="nav-item" data-view="frequencies">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-7 4 14 3-10 2 6h4"/></svg>
+          <span>Baza częstotliwości</span>
+        </button>
+        <button class="nav-item" data-view="guide">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6a3 3 0 0 1 3 3v14a3 3 0 0 0-3-3H4V4Zm16 0h-4a3 3 0 0 0-3 3v14a3 3 0 0 1 3-3h4V4Z"/></svg>
+          <span>Instrukcja</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="local-data-status">
+          <span class="status-light"></span>
+          <div>
+            <strong>Dane lokalne</strong>
+            <span>Obok aplikacji</span>
+          </div>
+        </div>
+        <label class="sidebar-language" for="language-select">
+          <span>Język</span>
+          <select id="language-select" aria-label="Język aplikacji"></select>
+        </label>
+        <span id="app-version" role="button" tabindex="0">v10.3.0</span>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <div>
+          <span class="topbar-label">Widok</span>
+          <strong id="view-title">Dzisiaj</strong>
+        </div>
+        <div class="topbar-context">
+          <span id="today-label"></span>
+          <span class="mode-badge" id="device-header-status">Płytka niepołączona</span>
+        </div>
+      </header>
+
+      <div class="error-banner" id="error-banner" role="alert"></div>
+
+      <main class="content">
+        <section class="view is-active" data-page="today" aria-labelledby="today-heading">
+          <div class="page-heading today-heading-row">
+            <div>
+              <span class="eyebrow">PLAN NA DZIŚ</span>
+              <h1 id="today-heading">Dzienny plan</h1>
+              <p id="today-summary">Ładowanie planu…</p>
+            </div>
+            <div class="day-number" aria-label="Numer dnia terapii">
+              <span>Dzień</span>
+              <strong id="day-number">—</strong>
+            </div>
+          </div>
+
+          <div class="progress-line" aria-hidden="true"><span id="daily-progress"></span></div>
+          <div class="overdue-actions" id="overdue-actions"></div>
+          <div class="session-list" id="today-list"></div>
+
+          <div class="today-settings">
+            <div>
+              <span class="section-label">Początek planu</span>
+              <p>Ta data wyznacza dzień fazy dla wszystkich profili.</p>
+            </div>
+            <div class="inline-controls">
+              <input type="date" id="start-date" aria-label="Data rozpoczęcia planu">
+              <button class="button secondary" id="save-start-date">Zapisz datę</button>
+              <button class="button text-danger" id="reset-progress">Resetuj postęp</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-page="device" aria-labelledby="device-heading">
+          <div class="page-heading with-actions">
+            <div>
+              <span class="eyebrow">STEROWANIE USB</span>
+              <h1 id="device-heading">Urządzenie</h1>
+              <p>Połącz Arduino Nano, przygotuj sesję i potwierdź jej start fizycznym przyciskiem na płytce.</p>
+            </div>
+            <div class="device-state-badge" id="device-state-badge"><span></span><strong>Niepołączone</strong></div>
+          </div>
+
+          <section class="device-connection-section">
+            <div>
+              <span class="section-label">Połączenie</span>
+              <p id="device-connection-message">Wybierz port COM płytki.</p>
+            </div>
+            <div class="connection-controls">
+              <select id="device-port" aria-label="Port urządzenia"><option value="">Wybierz port COM</option></select>
+              <button class="button secondary" id="refresh-device-ports">Odśwież</button>
+              <button class="button primary" id="connect-device">Połącz</button>
+              <button class="button secondary" id="disconnect-device" disabled>Rozłącz</button>
+            </div>
+          </section>
+
+          <div class="device-metrics">
+            <div><span>Stan</span><strong id="device-state">—</strong></div>
+            <div><span>Firmware</span><strong id="device-firmware">—</strong></div>
+            <div><span>Częstotliwość</span><strong id="device-frequency">—</strong></div>
+            <div><span>Pozostało</span><strong id="device-remaining">—</strong></div>
+            <div><span>Krok</span><strong id="device-step">—</strong></div>
+          </div>
+
+          <section class="device-section">
+            <div class="device-section-heading">
+              <div><span class="section-label">PLAN NA DZIŚ</span><h2>Sesje gotowe do wysłania</h2></div>
+              <p>Kroki urządzenia ustawisz w edytorze profili.</p>
+            </div>
+            <div id="device-session-list" class="device-session-list"></div>
+          </section>
+
+          <section class="device-section manual-device-section">
+            <div class="device-section-heading">
+              <div><span class="section-label">TRYB RĘCZNY</span><h2>Pojedyncza sesja</h2></div>
+              <p>Wartość zostanie przeliczona i wysłana jako całkowita liczba miliherców.</p>
+            </div>
+            <div class="manual-device-controls">
+              <label><span>Częstotliwość</span><input id="manual-frequency" type="number" min="0.1" step="0.01" value="30"></label>
+              <label><span>Jednostka</span><select id="manual-frequency-unit"><option value="1">Hz</option><option value="1000" selected>kHz</option><option value="1000000">MHz</option></select></label>
+              <label><span>Czas w minutach</span><input id="manual-duration" type="number" min="1" max="1440" value="7"></label>
+              <button class="button primary" id="start-manual-device">Uruchom</button>
+            </div>
+          </section>
+
+          <section class="device-section firmware-update-section">
+            <div class="device-section-heading">
+              <div><span class="section-label">FIRMWARE</span><h2>Aktualizacja Arduino</h2></div>
+              <p>Aplikacja dobiera wariant firmware do wybranego języka. Wgrywanie rozpoczyna się dopiero po kliknięciu przycisku.</p>
+            </div>
+            <div class="firmware-update-grid">
+              <div class="firmware-update-status">
+                <div><span>Wykryte firmware</span><strong id="firmware-installed-version">—</strong></div>
+                <div><span>Najnowsze firmware</span><strong id="firmware-latest-version">5.1.0</strong></div>
+                <div><span>Język firmware</span><strong id="firmware-target-language">—</strong></div>
+                <div><span>Język LCD</span><strong id="firmware-lcd-language">—</strong></div>
+              </div>
+              <div class="firmware-update-controls">
+                <label><span>Bootloader Arduino Nano</span>
+                  <select id="firmware-bootloader">
+                    <option value="new">Nowy bootloader (ATmega328P)</option>
+                    <option value="old">Stary bootloader (klony Nano)</option>
+                  </select>
+                </label>
+                <div class="firmware-flash-row">
+                  <button class="button primary" id="flash-firmware">Wgraj firmware</button>
+                  <span class="firmware-tool-state" id="firmware-tool-state">Sprawdzanie narzędzia…</span>
+                </div>
+                <p class="firmware-flash-note" id="firmware-flash-note">Wybierz port COM. Program nie wgrywa firmware automatycznie przy starcie.</p>
+                <pre class="firmware-flash-output" id="firmware-flash-output" hidden></pre>
+              </div>
+            </div>
+          </section>
+
+          <div class="device-last-line"><span>Ostatni komunikat</span><code id="device-last-message">Brak komunikacji</code></div>
+        </section>
+
+        <section class="view therapy-view" data-page="therapy" aria-labelledby="therapy-heading">
+          <div class="therapy-card">
+            <span class="eyebrow" id="therapy-eyebrow">TERAPIA</span>
+            <h1 id="therapy-heading">Trwająca sesja</h1>
+            <p class="therapy-freq" id="therapy-frequency">—</p>
+            <div class="therapy-time" id="therapy-time">00:00</div>
+            <p class="therapy-status" id="therapy-status">Wyślij sesję z widoku Urządzenie</p>
+            <p class="therapy-step" id="therapy-step"></p>
+            <div class="therapy-actions">
+              <div id="therapy-actions-busy">
+                <button class="button primary" id="pause-device">Pauza</button>
+                <button class="button text-danger" id="stop-device">Zatrzymaj</button>
+              </div>
+              <div id="therapy-actions-paused" hidden>
+                <button class="button primary" data-device-session="" data-profile-name="" data-paused="true" data-has-steps="true" data-available="true">Wznów</button>
+                <button class="button secondary" data-cancel-pause="">Zacznij od początku</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-page="schedule" aria-labelledby="schedule-heading">
+          <div class="page-heading with-actions">
+            <div>
+              <span class="eyebrow">WIDOK W PRZÓD</span>
+              <h1 id="schedule-heading">Harmonogram</h1>
+              <p>Plan wszystkich profili, wyliczony od aktualnej daty startu.</p>
+            </div>
+            <div class="segmented" id="schedule-range" aria-label="Zakres harmonogramu">
+              <button data-days="7" class="is-active">7 dni</button>
+              <button data-days="14">14 dni</button>
+              <button data-days="30">30 dni</button>
+            </div>
+          </div>
+          <div id="schedule-content" class="schedule-content"></div>
+        </section>
+
+        <section class="view profiles-view" data-page="profiles" aria-labelledby="profiles-heading">
+          <div class="page-heading compact-heading with-actions">
+            <div>
+              <span class="eyebrow">EDYTOR PLANU</span>
+              <h1 id="profiles-heading">Profile i fazy</h1>
+            </div>
+            <div class="editor-save-area">
+              <span id="save-state">Wszystkie zmiany zapisane</span>
+              <button class="button secondary" id="open-ai-tools">Kontekst i import AI</button>
+              <button class="button primary" id="save-profiles">Zapisz wszystko</button>
+            </div>
+          </div>
+
+          <div class="profile-workspace">
+            <aside class="editor-column profile-column">
+              <div class="column-heading">
+                <span>Profile</span>
+                <button class="icon-button" id="add-profile" aria-label="Dodaj osobę lub program">+</button>
+              </div>
+              <p class="column-hint">Stałe ID łączy aktywne programy, progres i archiwum.</p>
+              <div id="profile-list" class="editor-list"></div>
+            </aside>
+
+            <section class="editor-column phase-column">
+              <div class="column-heading">
+                <span>Fazy</span>
+                <button class="icon-button" id="add-phase" aria-label="Dodaj fazę">+</button>
+              </div>
+              <div id="phase-list" class="editor-list"></div>
+            </section>
+
+            <section class="inspector" id="phase-inspector"></section>
+          </div>
+        </section>
+
+        <section class="view" data-page="history" aria-labelledby="history-heading">
+          <div class="page-heading with-actions">
+            <div>
+              <span class="eyebrow">WYKONANE SESJE</span>
+              <h1 id="history-heading">Historia</h1>
+              <p id="history-count">Brak zapisanych sesji.</p>
+            </div>
+            <label class="search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+              <input id="history-search" type="search" placeholder="Szukaj w historii">
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Data</th><th>Osoba</th><th>Program</th><th>Czas</th><th>Faza</th><th>Notatka</th><th>Rodzaj</th></tr></thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" data-page="archive" aria-labelledby="archive-heading">
+          <div class="page-heading">
+            <span class="eyebrow">ZAKOŃCZONE PROGRAMY</span>
+            <h1 id="archive-heading">Archiwum</h1>
+            <p id="archive-count">Nie zakończono jeszcze żadnego programu.</p>
+          </div>
+          <div class="archive-list" id="archive-list"></div>
+        </section>
+
+        <section class="view" data-page="frequencies" aria-labelledby="frequencies-heading">
+          <div class="page-heading with-actions">
+            <div>
+              <span class="eyebrow">KATALOG</span>
+              <h1 id="frequencies-heading">Baza częstotliwości</h1>
+              <p id="frequency-count">Ładowanie bazy…</p>
+            </div>
+            <label class="search-field wide-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+              <input id="frequency-search" type="search" placeholder="Nazwa, częstotliwość lub opis">
+            </label>
+          </div>
+          <div class="frequency-list" id="frequency-list"></div>
+        </section>
+
+        <section class="view guide-view" data-page="guide" aria-labelledby="guide-heading">
+          <div class="page-heading compact-heading">
+            <span class="eyebrow">DOKUMENTACJA URZĄDZENIA</span>
+            <h1 id="guide-heading">Instrukcja</h1>
+          </div>
+          <iframe id="guide-frame" src="/guide?lang=pl" title="Instrukcja urządzenia Zapper"></iframe>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="ai-dialog" id="ai-dialog">
+    <div class="dialog-heading">
+      <div><span class="eyebrow">PRZEPŁYW Z AI</span><h2>Kontekst i import profilu</h2></div>
+      <button class="dialog-close" id="close-ai-tools" aria-label="Zamknij">×</button>
+    </div>
+    <div class="ai-step-tabs" role="tablist" aria-label="Kroki przepływu z AI">
+      <button class="ai-step-tab is-active" type="button" role="tab" id="ai-step-tab-context" data-step="context" aria-selected="true" aria-controls="ai-step-context">1. Kontekst dla AI</button>
+      <button class="ai-step-tab" type="button" role="tab" id="ai-step-tab-import" data-step="import" aria-selected="false" aria-controls="ai-step-import" tabindex="-1">2. Wynik od AI</button>
+    </div>
+    <div class="ai-step" id="ai-step-context" role="tabpanel" aria-labelledby="ai-step-tab-context">
+      <section class="ai-dialog-section ai-persons-section">
+        <div class="ai-section-heading">
+          <div><strong>Osoby</strong><span>Zaznacz jedną, wiele lub wszystkie — każda ma własny rodzaj zadania.</span></div>
+          <button class="button secondary" id="toggle-all-ai-persons" type="button">Zaznacz wszystkie</button>
+        </div>
+        <div id="ai-person-pick" class="ai-person-pick"></div>
+      </section>
+      <section class="ai-dialog-section">
+        <div class="ai-section-heading">
+          <div><strong>Tekst do wklejenia AI</strong><span>Markdown budowany na bieżąco. Możesz go skopiować albo zapisać jako plik .md.</span></div>
+          <div class="ai-context-actions">
+            <button class="button primary" id="generate-ai-context" type="button">Generuj tekst</button>
+            <button class="button secondary" id="copy-ai-context" type="button">Kopiuj</button>
+            <button class="button secondary" id="download-ai-context" type="button">Zapisz .md</button>
+          </div>
+        </div>
+        <textarea id="ai-context-output" readonly placeholder="Zaznacz osoby i wygeneruj tekst."></textarea>
+        <p class="ai-step-hint" id="ai-copy-hint" hidden>Tekst jest w schowku. Wklej go do modelu, a odpowiedź wróć tutaj w kroku <strong>2. Wynik od AI</strong>.</p>
+      </section>
+    </div>
+    <div class="ai-step" id="ai-step-import" role="tabpanel" aria-labelledby="ai-step-tab-import" hidden>
+      <section class="ai-dialog-section">
+        <div class="ai-section-heading"><div><strong>JSON otrzymany od AI</strong><span>Najpierw sprawdzimy format i pokażemy podgląd.</span></div><button class="button secondary" id="preview-ai-import" type="button">Sprawdź JSON</button></div>
+        <textarea id="ai-import-input" spellcheck="false" placeholder="Wklej tutaj odpowiedź AI: pojedynczy obiekt JSON albo tablicę obiektów — po jednym na osobę."></textarea>
+        <div class="ai-import-preview" id="ai-import-preview">Brak sprawdzonego profilu.</div>
+        <div class="dialog-actions"><button class="button primary" id="apply-ai-import" disabled>Zatwierdź i rozpocznij program</button></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog class="ai-dialog person-dialog" id="person-dialog">
+    <div class="dialog-heading">
+      <div><span class="eyebrow">OSOBY</span><h2>Dodaj osoby</h2></div>
+      <button class="dialog-close" id="close-person-dialog" aria-label="Zamknij">×</button>
+    </div>
+    <div class="ai-dialog-section">
+      <div class="ai-section-heading">
+        <div><strong id="person-add-heading">Nowa osoba</strong><span>Każda osoba dostanie stałe ID i będzie mogła prowadzić własny program.</span></div>
+      </div>
+      <div id="person-single-mode">
+        <label class="person-name-field"><span>Nazwa osoby</span><input id="new-person-single-name" placeholder="np. Tomek" autocomplete="off"></label>
+        <label class="person-name-field"><span>ID (opcjonalne)</span><input id="new-person-single-id" placeholder="np. tomek" autocomplete="off" spellcheck="false"><small>Zostaw puste dla automatycznego ID. Dozwolone: a-z, 0-9, _ i -, maksymalnie 40 znaków.</small></label>
+      </div>
+      <div id="person-multi-mode" hidden>
+        <label class="person-name-field"><span>Nazwy osób</span><textarea id="new-person-name" rows="5" placeholder="np. Maks, Ania&#10;Ola = ola_2026&#10;Jedno imię w linii lub po przecinku"></textarea><small>Jedno imię w linii lub po przecinku. Własne ID: Imię = id. Dozwolone: a-z, 0-9, _ i -. Bez = ID zostanie wygenerowane automatycznie.</small></label>
+      </div>
+      <button type="button" class="person-mode-toggle" id="toggle-person-mode">Dodaj wiele naraz</button>
+      <p class="person-dialog-error" id="person-add-error" hidden></p>
+      <div class="dialog-actions">
+        <button class="button secondary" id="cancel-person-dialog">Anuluj</button>
+        <button class="button primary" id="confirm-add-person">Dodaj osobę</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="ai-dialog person-dialog" id="person-edit-dialog">
+    <div class="dialog-heading">
+      <div><span class="eyebrow">OSOBY</span><h2>Zmień nazwę osoby</h2></div>
+      <button class="dialog-close" id="close-person-edit-dialog" aria-label="Zamknij">×</button>
+    </div>
+    <div class="ai-dialog-section">
+      <div class="ai-section-heading">
+        <div><strong>Nazwa osoby</strong><span id="person-edit-id">Stałe ID pozostaje bez zmian.</span></div>
+      </div>
+      <label class="person-name-field"><span>Nazwa</span><input id="person-edit-name" placeholder="Nazwa osoby"></label>
+      <div class="dialog-actions">
+        <button class="button text-danger" id="delete-person">Usuń osobę</button>
+        <button class="button secondary" id="cancel-person-edit-dialog">Anuluj</button>
+        <button class="button primary" id="confirm-person-edit">Zapisz</button>
+      </div>
+      <p class="person-delete-hint" id="person-delete-hint">Usunięcie trwale usuwa osobę, jej zakończone programy i całą historię z archiwum. Tej operacji nie można cofnąć.</p>
+    </div>
+  </dialog>
+
+  <dialog class="ai-dialog person-dialog" id="update-dialog">
+    <div class="dialog-heading">
+      <div><h2 id="update-dialog-title"></h2></div>
+      <button class="dialog-close" id="close-update-dialog" aria-label="Zamknij">×</button>
+    </div>
+    <div class="ai-dialog-section">
+      <p id="update-dialog-message"></p>
+      <p class="person-delete-hint" id="update-dialog-status" hidden></p>
+      <div class="dialog-actions">
+        <button class="button secondary" id="later-update"></button>
+        <button class="button primary" id="install-update"></button>
+      </div>
+    </div>
+  </dialog>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

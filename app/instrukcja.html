@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentacja Zapper DIY v5.1.0</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --bg: #f4f7f6;
+            --text: #333;
+            --code-bg: #1e1e1e;
+            --code-text: #dcdcdc;
+        }
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1320px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            border-top: 10px solid var(--accent);
+        }
+        h1 { color: var(--primary); font-size: 2.8em; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 20px;}
+        h2 { 
+            color: white; 
+            background: var(--primary); 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            margin-top: 50px; 
+            font-size: 1.4em;
+        }
+        h3 { color: var(--accent); margin-top: 30px; border-left: 4px solid var(--accent); padding-left: 10px; }
+        
+        ul, ol { margin-left: 20px; }
+        li { margin-bottom: 8px; }
+
+        .box {
+            background: #e8f8f5;
+            border: 1px solid #d1f2eb;
+            color: #0e6655;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .coord-box {
+            background: #fff8e1;
+            border: 1px solid #ffe0b2;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-family: 'Consolas', monospace;
+            font-size: 1.1em;
+        }
+        .warning {
+            background: #fdedec;
+            border: 1px solid #fadbd8;
+            color: #922b21;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; }
+        th { background-color: var(--primary); color: white; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            border: 1px solid #444;
+        }
+
+        .assembly-controls { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+        .assembly-controls button { border:1px solid #cfd8dc; background:#fff; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:600; }
+        .assembly-stage { position:relative; height:470px; overflow:hidden; border:1px solid #dfe6e9; border-radius:12px; background:linear-gradient(#f9fbfb,#eef3f4); perspective:1100px; margin:12px 0 24px; cursor:grab; user-select:none; touch-action:none; }
+        .assembly-stage.dragging { cursor:grabbing; }
+        .assembly-world { position:absolute; left:50%; top:50%; width:780px; height:380px; margin-left:-390px; margin-top:-190px; transform-style:preserve-3d; transform:translate3d(0,0,0) rotateX(54deg) rotateZ(-12deg) scale(0.92); transition:transform .12s ease; will-change:transform; }
+        .assembly-stage.dragging .assembly-world { transition:none; }
+        .assembly-help { position:absolute; left:12px; bottom:10px; z-index:10; padding:6px 9px; border-radius:6px; background:rgba(255,255,255,.9); border:1px solid #d5dee2; color:#455a64; font-size:12px; pointer-events:none; }
+        .part3d { position:absolute; box-sizing:border-box; border-radius:8px; box-shadow:0 10px 20px rgba(0,0,0,.14); font-weight:700; text-align:center; transform-style:preserve-3d; }
+        .breadboard3d { left:215px; top:70px; width:350px; height:245px; background-color:#f7f7f2; background-image:radial-gradient(circle,#8e9aa0 1.3px,transparent 1.5px); background-size:13px 13px; border:5px solid #e3e5df; }
+        .breadboard3d::after { content:"PŁYTKA STYKOWA 400 PÓL"; position:absolute; left:0; right:0; bottom:8px; color:#7b8589; font-size:12px; }
+        .nano3d { left:330px; top:105px; width:120px; height:180px; background:#1976a8; border:4px solid #115878; color:white; padding-top:62px; transform:translateZ(18px); }
+        .nano3d::before { content:"USB"; position:absolute; left:34px; top:-18px; width:48px; height:28px; line-height:28px; background:#cfd8dc; color:#37474f; border:2px solid #90a4ae; border-radius:4px; }
+        .lcd3d { left:18px; top:105px; width:180px; height:108px; background:#167d45; border:5px solid #0e5f33; color:white; padding-top:73px; transform:translateZ(26px); }
+        .lcd3d::before { content:"LCD1602 16×2"; position:absolute; left:15px; right:15px; top:14px; height:45px; line-height:45px; background:#173d91; border:4px solid #1c1c1c; color:#d9e7ff; font-family:Consolas,monospace; font-size:13px; }
+        .encoder3d { left:635px; top:112px; width:125px; height:110px; background:#296e43; border:4px solid #18512f; color:white; padding-top:76px; transform:translateZ(24px); }
+        .encoder3d::before { content:""; position:absolute; width:58px; height:58px; border-radius:50%; left:29px; top:10px; background:#9aa2a6; border:7px solid #626a6e; }
+        .wire3d { position:absolute; height:5px; border-radius:4px; transform-origin:0 50%; box-shadow:0 2px 3px rgba(0,0,0,.22); }
+        .wire3d::before, .wire3d::after { position:absolute; top:-28px; background:rgba(255,255,255,.96); border:1px solid #90a4ae; border-radius:5px; padding:2px 5px; font:700 12px Consolas,monospace; color:#263238; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+        .wire3d::before { content:attr(data-from); left:0; transform:translateX(-25%); }
+        .wire3d::after { content:attr(data-to); right:0; transform:translateX(25%); }
+        .resistor3d { position:absolute; left:530px; top:83px; width:18px; height:96px; transform:translateZ(26px); }
+        .resistor3d::before { content:""; position:absolute; left:7px; top:0; width:4px; height:96px; background:#ef6c00; }
+        .resistor3d::after { content:"1 kΩ  i5 → i1 → j1 OUT TEST"; position:absolute; left:24px; top:30px; background:#fff3e0; border:2px solid #ef6c00; color:#bf360c; border-radius:5px; padding:4px 7px; font:700 12px Consolas,monospace; white-space:nowrap; }
+        .nano-pin3d { position:absolute; z-index:8; padding:2px 5px; border-radius:4px; border:2px solid #f57f17; background:#fff59d; color:#3e2723; font:800 11px Consolas,monospace; transform:translateZ(36px); white-space:nowrap; }
+        .np-a4 { left:278px; top:179px; } .np-a5 { left:278px; top:195px; } .np-5v { left:278px; top:231px; } .np-lgnd { left:270px; top:255px; }
+        .np-d9 { left:454px; top:132px; } .np-d4 { left:454px; top:192px; } .np-d3 { left:454px; top:208px; } .np-d2 { left:454px; top:224px; } .np-rgnd { left:454px; top:240px; }
+        .w-lcd-gnd { left:194px; top:128px; width:145px; background:#222; transform:translateZ(12px) rotate(8deg); }
+        .w-lcd-vcc { left:194px; top:151px; width:150px; background:#d32f2f; transform:translateZ(13px) rotate(3deg); }
+        .w-lcd-sda { left:194px; top:177px; width:151px; background:#2e7d32; transform:translateZ(14px) rotate(-3deg); }
+        .w-lcd-scl { left:194px; top:200px; width:155px; background:#1565c0; transform:translateZ(15px) rotate(-8deg); }
+        .w-enc-clk { left:448px; top:139px; width:192px; background:#f9a825; transform:translateZ(12px) rotate(-2deg); }
+        .w-enc-dt { left:448px; top:164px; width:192px; background:#8e24aa; transform:translateZ(13px) rotate(2deg); }
+        .w-enc-sw { left:448px; top:189px; width:194px; background:#00838f; transform:translateZ(14px) rotate(5deg); }
+        .w-enc-gnd { left:448px; top:214px; width:195px; background:#222; transform:translateZ(15px) rotate(9deg); }
+        .w-enc-vcc { left:445px; top:239px; width:200px; background:#d32f2f; transform:translateZ(16px) rotate(12deg); }
+        .assembly-pinmap { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:14px 0 24px; }
+        .assembly-pinmap div { border:1px solid #dde4e7; border-radius:8px; padding:10px 12px; background:#fafcfc; }
+        .wiring-card { margin:18px 0 28px; border:2px solid #cfd8dc; border-radius:12px; background:#fff; overflow:hidden; }
+        .wiring-card h3 { margin:0; padding:14px 18px; border-left:0; background:#263238; color:white; }
+        .wiring-card p { padding:0 18px; }
+        .wiring-scroll { overflow-x:auto; padding:12px; }
+        .wiring-svg { display:block; width:100%; min-width:920px; height:auto; background:#f7fafb; border-radius:8px; }
+        .wiring-svg .board { fill:#f3f1e7; stroke:#b0bec5; stroke-width:3; }
+        .wiring-svg .nano { fill:#1780ad; stroke:#0f5f82; stroke-width:3; }
+        .wiring-svg .lcd { fill:#17864c; stroke:#0c6134; stroke-width:3; }
+        .wiring-svg .lcd-screen { fill:#153f94; stroke:#111; stroke-width:5; }
+        .wiring-svg .encoder { fill:#2f7548; stroke:#1c5935; stroke-width:3; }
+        .wiring-svg .knob { fill:#9aa2a6; stroke:#60686d; stroke-width:6; }
+        .wiring-svg .pin { fill:#fff; stroke:#263238; stroke-width:2; }
+        .wiring-svg .pin-used { fill:#fff59d; stroke:#f57f17; stroke-width:3; }
+        .wiring-svg .wire { fill:none; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; opacity:.92; }
+        .wiring-svg .wire-gnd { stroke:#212121; }
+        .wiring-svg .wire-vcc { stroke:#d32f2f; }
+        .wiring-svg .wire-sda { stroke:#2e7d32; }
+        .wiring-svg .wire-scl { stroke:#1565c0; }
+        .wiring-svg .wire-clk { stroke:#f9a825; }
+        .wiring-svg .wire-dt { stroke:#8e24aa; }
+        .wiring-svg .wire-sw { stroke:#00838f; }
+        .wiring-svg .wire-out { stroke:#ef6c00; }
+        .wiring-svg text { font-family:Segoe UI,Arial,sans-serif; fill:#263238; }
+        .wiring-svg .small { font-size:13px; }
+        .wiring-svg .label { font-size:15px; font-weight:700; }
+        .wiring-svg .major { font-size:19px; font-weight:800; }
+        .wiring-svg .endpoint { fill:#fff; stroke:#607d8b; stroke-width:1.5; rx:5; }
+        .wiring-svg .resistor-body { fill:#d7b98a; stroke:#6d4c41; stroke-width:2; }
+        .connection-table code { font-weight:700; white-space:nowrap; }
+        .connection-table td:first-child { font-weight:700; }
+
+        /* Nowy, główny schemat: płaski SVG. Stary pseudo-3D zostaje w pliku tylko tymczasowo, ale nie jest wyświetlany. */
+        .assembly-note, .assembly-controls, .assembly-stage, .assembly-pinmap, .wiring-card { display:none !important; }
+        .svg-wiring-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+        .svg-wiring-toolbar button { border:1px solid #cfd8dc; background:#fff; padding:9px 14px; border-radius:7px; cursor:pointer; font-weight:700; }
+        .svg-wiring-toolbar button:hover { background:#f1f5f6; }
+        .svg-wiring-viewer { position:relative; height:clamp(500px,70vh,820px); overflow:hidden; border:1px solid #d9e1e4; border-radius:12px; background:#f7fafb; cursor:grab; user-select:none; touch-action:none; }
+        .svg-wiring-viewer.dragging { cursor:grabbing; }
+        .svg-wiring-viewer img { position:absolute; left:50%; top:50%; width:1760px; max-width:none; height:auto; transform-origin:center center; pointer-events:none; will-change:transform; }
+        .svg-wiring-help { margin:8px 0 18px; color:#546e7a; font-size:13px; }
+        .svg-wiring-warning { background:#fff8e1; border:1px solid #ffcc80; border-left:5px solid #ef6c00; padding:12px 14px; border-radius:8px; margin:12px 0; }
+        .real3d-block { margin:20px 0 30px; }
+        .real3d-toolbar { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+        .real3d-toolbar button { border:1px solid #c7d2d7; background:#fff; padding:9px 13px; border-radius:7px; cursor:pointer; font-weight:700; }
+        .real3d-toolbar button:hover { background:#eef4f6; }
+        .real3d-scene { position:relative; height:clamp(500px,72vh,860px); border:2px solid #cfd8dc; border-radius:14px; overflow:hidden; background:#f5f8f9; box-shadow:0 8px 25px rgba(0,0,0,.07) inset; }
+        .real3d-scene canvas { display:block; width:100%; height:100%; cursor:grab; user-select:none; touch-action:none; }
+        .real3d-scene canvas.dragging { cursor:grabbing; }
+        .real3d-note { margin:8px 0 0; color:#546e7a; font-size:13px; }
+        .real3d-important { margin:12px 0; padding:12px 14px; border-left:5px solid #ef6c00; background:#fff8e1; border-radius:8px; }
+        .connection-legend-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:14px 0 18px; }
+        .connection-legend-grid .legend-card { border:1px solid #d9e1e4; border-radius:10px; padding:13px 15px; background:#fbfcfc; }
+        .connection-legend-grid .legend-card strong { display:block; margin-bottom:8px; font-size:15px; }
+        .connection-legend-grid .legend-line { display:grid; grid-template-columns:12px 1fr; gap:8px; align-items:center; margin:5px 0; font-family:Consolas,monospace; font-size:13px; }
+        .connection-legend-grid .swatch { width:10px; height:10px; border-radius:50%; display:block; }
+        .connection-legend-grid .note { margin-top:8px; font-size:12px; color:#596b73; }
+        @media (max-width: 980px) {
+            body { padding:12px; }
+            .container { padding:22px; border-radius:10px; }
+            h1 { font-size:2em; }
+            .connection-legend-grid { grid-template-columns:1fr; }
+            .real3d-scene { height:clamp(460px,68vh,680px); }
+            .svg-wiring-viewer { height:clamp(460px,68vh,680px); }
+            .real3d-toolbar button, .svg-wiring-toolbar button { padding:8px 10px; font-size:13px; }
+        }
+        @media (max-width: 620px) {
+            body { padding:6px; }
+            .container { padding:12px; border-top-width:6px; }
+            .real3d-scene, .svg-wiring-viewer { height:520px; }
+            .real3d-toolbar { gap:5px; }
+        }
+
+        .print-btn {
+            float: right;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .print-btn:hover { background: #219150; transform: translateY(-2px); }
+
+        @media print {
+            .print-btn { display: none; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; padding: 0; width: 100%; margin: 0; }
+            h2 { background: none; color: black; border-bottom: 2px solid black; padding: 0; }
+            pre { white-space: pre-wrap; border: 1px solid #ccc; color: black; background: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="print-btn" onclick="window.print()">🖨️ Drukuj do PDF</button>
+
+    <h1>Dokumentacja Zapper DIY</h1>
+    <p><strong>Wersja firmware:</strong> 5.1.0 (USB + tryb samodzielny + warianty językowe LCD)<br>
+    <strong>Autor:</strong> Maksymilian<br>
+    <strong>Opis:</strong> Generator częstotliwości terapeutycznych (Clark/Rife) na platformie Arduino.</p>
+
+    <!-- SEKCJA 1 -->
+    <h2>1. Lista Zakupów</h2>
+    <ul>
+        <li><strong>Arduino Nano V3</strong> (USB-C/MiniUSB) z wlutowanymi nóżkami.</li>
+        <li><strong>Wyświetlacz LCD1602 (16x2, niebieski)</strong> z konwerterem I2C (czarna płytka z tyłu).</li>
+        <li><strong>Enkoder KY-040</strong> (360° z przyciskiem).</li>
+        <li><strong>Płytka stykowa 400 pól</strong> (Breadboard).</li>
+        <li><strong>Rezystor 1k Ohm</strong> (0.25W).</li>
+        <li><strong>Kable połączeniowe:</strong> Męsko-Męskie i Męsko-Żeńskie.</li>
+        <li><strong>Krokodylki na kablu</strong> (Zestaw 10 szt.).</li>
+        <li><strong>Rura miedziana TWARDA</strong> (fi 15mm).</li>
+    </ul>
+
+    <!-- SEKCJA 2 -->
+    <h2>2. Schemat Montażu (Dokładne Współrzędne)</h2>
+    <p><strong>Najpierw widok 3D montażu.</strong> Arduino Nano jest osadzone na widocznej płytce stykowej A–J / 1–30. Lewa listwa Nano jest w kolumnie <code>D</code>, prawa w <code>H</code>; dzięki temu rozstaw odpowiada Nano na breadboardzie. LCD1602 i KY-040 są odsunięte od płytki, a przewody mają osobne kolorowe tory z białą obwódką, żeby były czytelne także od tyłu.</p>
+
+    <div class="real3d-block">
+        <div class="real3d-toolbar">
+            <button type="button" onclick="wiring3dView('iso')">Widok montażu 3D</button>
+            <button type="button" onclick="wiring3dView('top')">Z góry</button>
+            <button type="button" onclick="wiring3dView('rear')">Od tyłu</button>
+            <button type="button" onclick="wiring3dView('lcdRear')">LCD1602 — tył i I2C</button>
+            <button type="button" onclick="wiring3dView('kyRear')">KY-040 — tylne piny</button>
+            <button type="button" onclick="wiring3dToggleLabels()">Opisy wł./wył.</button>
+            <button type="button" onclick="wiring3dReset()">Reset</button>
+        </div>
+        <div class="real3d-scene" id="wiring3dScene">
+            <canvas id="wiring3dCanvas" aria-label="Interaktywny model 3D montażu Zappera"></canvas>
+        </div>
+        <div class="real3d-note">Lewy przycisk myszy: obrót • rolka: zoom • Shift albo prawy przycisk: przesunięcie • dwuklik: reset.</div>
+        <div class="connection-legend-grid">
+            <div class="legend-card">
+                <strong>LCD1602 I2C</strong>
+                <div class="legend-line"><span class="swatch" style="background:#222"></span><span>GND → a15 → Nano GND</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#d32f2f"></span><span>VCC → a13 → Nano 5V</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#2e7d32"></span><span>SDA → a9 → Nano A4</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#1565c0"></span><span>SCL → a10 → Nano A5</span></div>
+            </div>
+            <div class="legend-card">
+                <strong>KY-040</strong>
+                <div class="legend-line"><span class="swatch" style="background:#f39c12"></span><span>CLK → j12 → Nano D2</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#8e24aa"></span><span>DT → j11 → Nano D3</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#00838f"></span><span>SW → j10 → Nano D4</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#d32f2f"></span><span>+ → b13 → Nano 5V</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#222"></span><span>GND → j13 → Nano GND</span></div>
+            </div>
+            <div class="legend-card">
+                <strong>Wyjście przez rezystor</strong>
+                <div class="legend-line"><span class="swatch" style="background:#ef6c00"></span><span>D9 jest w H5; i5 jest w tym samym połączonym rzędzie F–J</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#ef6c00"></span><span>rezystor 1 kΩ: i5 → i1</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#c62828"></span><span>j1 → czerwony krokodylek</span></div>
+                <div class="legend-line"><span class="swatch" style="background:#222"></span><span>Nano GND (D15) → b15 → czarny krokodylek</span></div>
+                <div class="note">i1 i j1 są w tym samym połączonym rzędzie F–J. Dlatego przewód wyjściowy może być w j1, gdy nóżka rezystora jest w i1.</div>
+            </div>
+        </div>
+        <div class="real3d-important"><strong>Rezystor jest fizycznie na płytce.</strong> Sekwencja montażowa: <code>D9 / H5 → i5 → rezystor 1 kΩ → i1 → j1 → czerwony krokodylek</code>. Zasilanie jest rozdzielone na dwa osobne otwory tego samego rzędu: <code>LCD VCC → a13</code> i <code>KY + → b13</code>; oba łączą się wewnętrznie z <code>Nano 5V w D13</code>. Masa po lewej analogicznie: <code>LCD GND → a15</code>, <code>czarny krokodylek → b15</code>, a Nano GND siedzi w <code>D15</code>.</div>
+    </div>
+
+    <h3>Schemat 2D — jako drugi widok kontrolny</h3>
+    <div class="svg-wiring-toolbar">
+        <button type="button" onclick="wiringZoom(1.2)">Powiększ +</button>
+        <button type="button" onclick="wiringZoom(1/1.2)">Pomniejsz −</button>
+        <button type="button" onclick="wiringReset()">Dopasuj całość</button>
+    </div>
+    <div class="svg-wiring-viewer" id="wiringViewer" aria-label="Skalowalny schemat połączeń Zappera">
+        <img id="wiringImage" src="/assets/zapper_wiring.svg" alt="Schemat połączeń LCD1602, Arduino Nano, KY-040, rezystora 1 kΩ i krokodylków testowych">
+    </div>
+    <div class="svg-wiring-help">Rolka myszy: powiększanie • przeciąganie lewym przyciskiem: przesunięcie • dwuklik: dopasowanie całości.</div>
+    <div class="svg-wiring-warning"><strong>Wyjście jest pokazane wprost:</strong> pin <code>D9</code> → <code>rezystor 1 kΩ</code> → przewód → <strong>czerwony krokodylek</strong>. Czarny krokodylek idzie z <code>GND</code>. Schemat traktuj jako połączenie/punkt testowy układu.</div>
+    <p class="assembly-note"><strong>Podgląd przestrzenny:</strong> poniższy model pokazuje rozmieszczenie Arduino Nano, LCD1602 i enkodera KY-040 oraz przebieg przewodów sterujących. To wizualizacja montażowa; dokładne piny są podane w tabelach poniżej.</p>
+    <div class="assembly-controls">
+        <button type="button" onclick="setAssemblyView('iso')">Widok 3D</button>
+        <button type="button" onclick="setAssemblyView('top')">Widok z góry</button>
+        <button type="button" onclick="setAssemblyView('front')">Widok z przodu</button>
+        <button type="button" onclick="resetAssemblyView()">Reset widoku</button>
+    </div>
+    <div class="assembly-stage" id="assemblyStage" aria-label="Interaktywny model montażu Zappera">
+        <div class="assembly-world" id="assemblyWorld">
+            <div class="part3d breadboard3d"></div>
+            <div class="part3d nano3d">ARDUINO NANO</div>
+            <div class="nano-pin3d np-a4">A4 / r9</div>
+            <div class="nano-pin3d np-a5">A5 / r10</div>
+            <div class="nano-pin3d np-5v">5V / r13</div>
+            <div class="nano-pin3d np-lgnd">GND / r15</div>
+            <div class="nano-pin3d np-d9">D9 / r5</div>
+            <div class="nano-pin3d np-d4">D4 / r10</div>
+            <div class="nano-pin3d np-d3">D3 / r11</div>
+            <div class="nano-pin3d np-d2">D2 / r12</div>
+            <div class="nano-pin3d np-rgnd">GND / r13</div>
+            <div class="part3d lcd3d">I2C: GND VCC SDA SCL</div>
+            <div class="part3d encoder3d">KY-040</div>
+            <div class="resistor3d" aria-label="Rezystor 1 kiloohm od D9 przez i5 do i1 i punktu j1"></div>
+            <div class="wire3d w-lcd-gnd" data-from="LCD GND" data-to="a15 / Nano GND"></div>
+            <div class="wire3d w-lcd-vcc" data-from="LCD VCC" data-to="a13 / Nano 5V"></div>
+            <div class="wire3d w-lcd-sda" data-from="LCD SDA" data-to="a9 / Nano A4"></div>
+            <div class="wire3d w-lcd-scl" data-from="LCD SCL" data-to="a10 / Nano A5"></div>
+            <div class="wire3d w-enc-clk" data-from="KY CLK" data-to="j12 / Nano D2"></div>
+            <div class="wire3d w-enc-dt" data-from="KY DT" data-to="j11 / Nano D3"></div>
+            <div class="wire3d w-enc-sw" data-from="KY SW" data-to="j10 / Nano D4"></div>
+            <div class="wire3d w-enc-gnd" data-from="KY GND" data-to="j13 / Nano GND"></div>
+            <div class="wire3d w-enc-vcc" data-from="KY +" data-to="b13 / Nano 5V"></div>
+        </div>
+        <div class="assembly-help">Przeciągnij: obrót • Shift/prawy: przesunięcie • rolka: zoom • dwuklik: reset</div>
+    </div>
+    <div class="assembly-pinmap">
+        <div><strong>LCD1602 I2C</strong><br><code>GND → a15 → Nano GND</code><br><code>VCC → a13 → Nano 5V</code><br><code>SDA → a9 → Nano A4</code><br><code>SCL → a10 → Nano A5</code></div>
+        <div><strong>KY-040</strong><br><code>CLK → j12 → Nano D2</code><br><code>DT → j11 → Nano D3</code><br><code>SW → j10 → Nano D4</code><br><code>+ → b13 → Nano 5V</code><br><code>GND → j13 → Nano GND</code></div>
+        <div><strong>Wyjście testowe</strong><br><code>Nano D9 → i5</code><br><code>rezystor 1 kΩ: i5 → i1</code><br><code>j1 = OUT TEST</code><br><small>Nie pomijaj rezystora.</small></div>
+    </div>
+
+    <div class="wiring-card">
+        <h3>Dokładny schemat — patrz na ten widok przy wpinaniu kabli</h3>
+        <p><strong>USB Arduino jest u góry.</strong> Każda linia kończy się na konkretnym pinie Nano. Oznaczenia <code>a9</code>, <code>j12</code> itd. są dokładnymi otworami płytki stykowej.</p>
+        <div class="wiring-scroll">
+            <svg class="wiring-svg" viewBox="0 0 1000 620" role="img" aria-label="Dokładne połączenia LCD1602, Arduino Nano, KY-040 i rezystora 1 kiloohm">
+                <rect class="board" x="250" y="55" width="500" height="520" rx="18"/>
+                <text class="major" x="500" y="592" text-anchor="middle">PŁYTKA STYKOWA — USB NANO U GÓRY</text>
+
+                <rect class="nano" x="440" y="130" width="120" height="340" rx="9"/>
+                <rect x="468" y="92" width="64" height="45" rx="5" fill="#cfd8dc" stroke="#78909c" stroke-width="3"/>
+                <text class="label" x="500" y="120" text-anchor="middle">USB</text>
+                <text class="major" x="500" y="285" text-anchor="middle" fill="white">ARDUINO</text>
+                <text class="major" x="500" y="310" text-anchor="middle" fill="white">NANO</text>
+
+                <!-- używane piny Nano: lewa strona -->
+                <circle class="pin-used" cx="430" cy="318" r="8"/><text class="label" x="415" y="323" text-anchor="end">A4 · rząd 9</text>
+                <circle class="pin-used" cx="430" cy="342" r="8"/><text class="label" x="415" y="347" text-anchor="end">A5 · rząd 10</text>
+                <circle class="pin-used" cx="430" cy="414" r="8"/><text class="label" x="415" y="419" text-anchor="end">5V · rząd 13</text>
+                <circle class="pin-used" cx="430" cy="462" r="8"/><text class="label" x="415" y="467" text-anchor="end">GND · rząd 15</text>
+
+                <!-- używane piny Nano: prawa strona -->
+                <circle class="pin-used" cx="570" cy="222" r="8"/><text class="label" x="585" y="227">D9 · rząd 5</text>
+                <circle class="pin-used" cx="570" cy="342" r="8"/><text class="label" x="585" y="347">D4 · rząd 10</text>
+                <circle class="pin-used" cx="570" cy="366" r="8"/><text class="label" x="585" y="371">D3 · rząd 11</text>
+                <circle class="pin-used" cx="570" cy="390" r="8"/><text class="label" x="585" y="395">D2 · rząd 12</text>
+                <circle class="pin-used" cx="570" cy="414" r="8"/><text class="label" x="585" y="419">GND · rząd 13</text>
+
+                <!-- LCD -->
+                <rect class="lcd" x="20" y="165" width="180" height="190" rx="8"/>
+                <rect class="lcd-screen" x="42" y="190" width="136" height="72" rx="5"/>
+                <text class="major" x="110" y="230" text-anchor="middle" fill="white">LCD1602</text>
+                <text class="small" x="110" y="285" text-anchor="middle" fill="white">I2C</text>
+                <circle class="pin" cx="200" cy="300" r="7"/><text class="label" x="188" y="305" text-anchor="end" fill="white">GND</text>
+                <circle class="pin" cx="200" cy="320" r="7"/><text class="label" x="188" y="325" text-anchor="end" fill="white">VCC</text>
+                <circle class="pin" cx="200" cy="340" r="7"/><text class="label" x="188" y="345" text-anchor="end" fill="white">SDA</text>
+                <circle class="pin" cx="200" cy="360" r="7"/><text class="label" x="188" y="365" text-anchor="end" fill="white">SCL</text>
+
+                <!-- przewody LCD -->
+                <path class="wire wire-gnd" d="M200 300 H225 V462 H430"/><text class="small" x="260" y="454">a15 → GND</text>
+                <path class="wire wire-vcc" d="M200 320 H235 V414 H430"/><text class="small" x="270" y="405">a13 → 5V</text>
+                <path class="wire wire-sda" d="M200 340 H300 V318 H430"/><text class="small" x="305" y="309">a9 → A4</text>
+                <path class="wire wire-scl" d="M200 360 H325 V342 H430"/><text class="small" x="330" y="334">a10 → A5</text>
+
+                <!-- KY-040 -->
+                <rect class="encoder" x="805" y="170" width="175" height="230" rx="8"/>
+                <circle class="knob" cx="895" cy="230" r="43"/>
+                <text class="major" x="895" y="300" text-anchor="middle" fill="white">KY-040</text>
+                <circle class="pin" cx="805" cy="320" r="7"/><text class="label" x="818" y="325" fill="white">CLK</text>
+                <circle class="pin" cx="805" cy="340" r="7"/><text class="label" x="818" y="345" fill="white">DT</text>
+                <circle class="pin" cx="805" cy="360" r="7"/><text class="label" x="818" y="365" fill="white">SW</text>
+                <circle class="pin" cx="805" cy="380" r="7"/><text class="label" x="818" y="385" fill="white">+</text>
+                <circle class="pin" cx="805" cy="400" r="7"/><text class="label" x="818" y="405" fill="white">GND</text>
+
+                <!-- przewody KY-040 -->
+                <path class="wire wire-clk" d="M805 320 H735 V390 H570"/><text class="small" x="690" y="382">j12 → D2</text>
+                <path class="wire wire-dt" d="M805 340 H715 V366 H570"/><text class="small" x="670" y="358">j11 → D3</text>
+                <path class="wire wire-sw" d="M805 360 H695 V342 H570"/><text class="small" x="650" y="334">j10 → D4</text>
+                <path class="wire wire-gnd" d="M805 400 H675 V414 H570"/><text class="small" x="650" y="435">j13 → GND</text>
+                <path class="wire wire-vcc" d="M805 380 H785 V520 H390 V414 H430"/><text class="small" x="545" y="512">b13 → 5V</text>
+
+                <!-- rezystor 1 kΩ i wyjście testowe -->
+                <path class="wire wire-out" d="M570 222 H670 V205"/>
+                <rect class="resistor-body" x="656" y="155" width="28" height="50" rx="8"/>
+                <path class="wire wire-out" d="M670 155 V125 H755"/>
+                <circle cx="670" cy="222" r="7" fill="#ffcc80" stroke="#ef6c00" stroke-width="3"/>
+                <circle cx="670" cy="125" r="7" fill="#ffcc80" stroke="#ef6c00" stroke-width="3"/>
+                <rect class="endpoint" x="752" y="103" width="132" height="44"/>
+                <text class="label" x="818" y="121" text-anchor="middle">j1 = OUT TEST</text>
+                <text class="small" x="818" y="139" text-anchor="middle">punkt pomiarowy</text>
+                <text class="label" x="690" y="178">1 kΩ</text>
+                <text class="small" x="680" y="239">i5</text>
+                <text class="small" x="680" y="118">i1</text>
+            </svg>
+        </div>
+    </div>
+
+    <table class="connection-table">
+        <tr><th>Element</th><th>Pin modułu</th><th>Otwór płytki</th><th>Pin Arduino Nano</th></tr>
+        <tr><td>LCD1602</td><td>GND</td><td><code>a15</code></td><td><code>GND</code> — rząd 15 po lewej</td></tr>
+        <tr><td>LCD1602</td><td>VCC</td><td><code>a13</code></td><td><code>5V</code> — rząd 13 po lewej</td></tr>
+        <tr><td>LCD1602</td><td>SDA</td><td><code>a9</code></td><td><code>A4</code> — rząd 9 po lewej</td></tr>
+        <tr><td>LCD1602</td><td>SCL</td><td><code>a10</code></td><td><code>A5</code> — rząd 10 po lewej</td></tr>
+        <tr><td>KY-040</td><td>CLK</td><td><code>j12</code></td><td><code>D2</code> — rząd 12 po prawej</td></tr>
+        <tr><td>KY-040</td><td>DT</td><td><code>j11</code></td><td><code>D3</code> — rząd 11 po prawej</td></tr>
+        <tr><td>KY-040</td><td>SW</td><td><code>j10</code></td><td><code>D4</code> — rząd 10 po prawej</td></tr>
+        <tr><td>KY-040</td><td>+</td><td><code>b13</code></td><td><code>5V</code> — wspólny rząd 13 po lewej</td></tr>
+        <tr><td>KY-040</td><td>GND</td><td><code>j13</code></td><td><code>GND</code> — rząd 13 po prawej</td></tr>
+        <tr><td>Wyjście testowe</td><td>D9</td><td><code>i5 → rezystor 1 kΩ → i1/j1</code></td><td><code>D9</code> — rząd 5 po prawej</td></tr>
+    </table>
+
+    <p>To jest instrukcja odwzorowująca Twoje urządzenie. Płytka ma oznaczenia literowe (A-J) i cyfrowe (1-30).</p>
+    
+    <div class="coord-box">
+        POZYCJA STARTOWA:<br>
+        Wciśnij Arduino Nano na środek płytki.<br>
+        Gniazdo USB musi być skierowane w STRONĘ GÓRNĄ (rząd 1).<br>
+        Lewy górny pin Arduino celuje w dziurkę: <strong>d2</strong>.
+    </div>
+
+    <h3>A. Podłączenie LCD1602 I2C (Lewa strona - Kolumna A)</h3>
+    <p>Użyj kabli Męsko-Żeńskich. Wpinamy w skrajną lewą kolumnę <strong>"a"</strong>.</p>
+    <table>
+        <tr>
+            <th>Kabel Ekranu</th>
+            <th>Gdzie wbić? (Współrzędna)</th>
+            <th>Opis na Arduino</th>
+        </tr>
+        <tr>
+            <td>GND</td>
+            <td><strong>a15</strong></td>
+            <td>GND — rząd 15 po lewej</td>
+        </tr>
+        <tr>
+            <td>VCC</td>
+            <td><strong>a13</strong></td>
+            <td>5V — rząd 13 po lewej</td>
+        </tr>
+        <tr>
+            <td>SDA</td>
+            <td><strong>a9</strong></td>
+            <td>A4</td>
+        </tr>
+        <tr>
+            <td>SCL</td>
+            <td><strong>a10</strong></td>
+            <td>A5</td>
+        </tr>
+    </table>
+
+    <h3>B. Podłączenie GAŁKI (Prawa strona - Kolumna J)</h3>
+    <p>Użyj kabli Męsko-Żeńskich. Wpinamy w skrajną prawą kolumnę <strong>"j"</strong>.</p>
+    <table>
+        <tr>
+            <th>Kabel Gałki</th>
+            <th>Gdzie wbić? (Współrzędna)</th>
+            <th>Opis na Arduino</th>
+        </tr>
+        <tr>
+            <td>CLK</td>
+            <td><strong>j12</strong></td>
+            <td>D2 — rząd 12 po prawej</td>
+        </tr>
+        <tr>
+            <td>DT</td>
+            <td><strong>j11</strong></td>
+            <td>D3 — rząd 11 po prawej</td>
+        </tr>
+        <tr>
+            <td>SW</td>
+            <td><strong>j10</strong></td>
+            <td>D4 — rząd 10 po prawej</td>
+        </tr>
+        <tr>
+            <td>GND</td>
+            <td><strong>j13</strong></td>
+            <td>GND — rząd 13 po prawej</td>
+        </tr>
+        <tr>
+            <td>+ (Plus)</td>
+            <td><strong>b13</strong></td>
+            <td>5V — rząd 13 po lewej</td>
+        </tr>
+    </table>
+    <p><em>Plus KY-040 jest wpięty do <strong>b13</strong>. Sam przewód po wyjściu z b13 jest prowadzony w stronę kolumny C, skręca w dół przy c13 i dalej biegnie do KY-040. Nie używaj b2 — to nie jest 5V.</em></p>
+
+    <h3>C. D9 + rezystor 1 kΩ + punkt wyjściowy</h3>
+    <p>Tu wcześniej brakowało najważniejszego elementu na rysunku. Rezystor ma być widoczny i wpięty <strong>szeregowo za D9</strong>.</p>
+    <div class="coord-box">
+        1. PIN D9:<br>
+        - Przy USB skierowanym do góry <strong>D9 jest w rzędzie 5 po prawej stronie Nano</strong>.<br>
+        - Ten sam elektryczny rząd po prawej stronie płytki to m.in. otwór <strong>i5</strong>.<br><br>
+
+        2. REZYSTOR 1 kΩ:<br>
+        - Pierwsza nóżka: <strong>i5</strong> — połączona z D9.<br>
+        - Druga nóżka: <strong>i1</strong>.<br>
+        - Czyli: <strong>D9 → i5 → [1 kΩ] → i1</strong>.<br><br>
+
+        3. PUNKT WYJŚCIOWY DO POMIARU:<br>
+        - <strong>j1</strong> jest w tym samym rzędzie co i1, więc dostajesz tam sygnał już <strong>za rezystorem</strong>.<br>
+        - Schemat: <strong>D9 → 1 kΩ → j1 (OUT TEST)</strong>.<br><br>
+
+        4. MASA DO POMIARU:<br>
+        - Użyj <strong>j13</strong> (GND po prawej) albo <strong>a15</strong> (GND po lewej).
+    </div>
+    <div class="warning">Najpierw sprawdź sygnał na j1 względem GND miernikiem lub oscyloskopem. Ten schemat opisuje montaż i punkt testowy układu, nie połączenie z ciałem.</div>
+	
+	<h3>D. Przygotowanie Rurek (Elektrod) - Krok po Kroku</h3>
+    <p>Rurki to Twoje "rączki". Muszą być bezpieczne (bez ostrych krawędzi) i czyste (dobrze przewodzić).</p>
+
+    <div class="box">
+        <strong>Potrzebne narzędzia:</strong>
+        <ul>
+            <li>Piłka do metalu (brzeszczot)</li>
+            <li>Papier ścierny lub pilnik do metalu</li>
+            <li>Druciak kuchenny (stalowy) lub wełna stalowa</li>
+        </ul>
+    </div>
+
+    <ol>
+        <li><strong>Cięcie:</strong>
+            <ul>
+                <li>Odmierz na rurze dwa kawałki po około <strong>12 cm</strong> (tak, żeby rurka wystawała z zaciśniętej dłoni po 1-2 cm z każdej strony).</li>
+                <li>Utnij rurę piłką do metalu. Staraj się nie zgnieść rurki (nie ściskaj jej za mocno w imadle).</li>
+            </ul>
+        </li>
+        <li><strong>Szlifowanie (BARDZO WAŻNE!):</strong>
+            <ul>
+                <li>Po cięciu krawędzie są <strong>ostre jak żyletka</strong>. Możesz się pociąć!</li>
+                <li>Weź pilnik lub gruby papier ścierny i zeszlifuj ostre krawędzie na zewnątrz i wewnątrz rurki na okrągło.</li>
+                <li>Test: Przejedź delikatnie palcem po krawędzi. Musi być gładka jak obrączka.</li>
+            </ul>
+        </li>
+        <li><strong>Polerowanie (Dla lepszego prądu):</strong>
+            <ul>
+                <li>Rurki ze sklepu są pokryte patyną (ciemnym nalotem) lub smarem. To izoluje prąd.</li>
+                <li>Weź druciak kuchenny i wyszoruj rurki pod ciepłą wodą z płynem do naczyń.</li>
+                <li>Mają błyszczeć jak nowe monety.</li>
+            </ul>
+        </li>
+    </ol>
+
+    <!-- SEKCJA 3 -->
+    <h2>3. Firmware v5</h2>
+    <div class="box">
+        <strong>Aktualny kod:</strong> <code>firmware/zapper_v5/zapper_v5.ino</code><br>
+        Ta wersja działa samodzielnie z LCD i enkoderem, a dodatkowo przyjmuje z aplikacji dokładną częstotliwość i czas przez USB. Używa sprzętowego Timer1 na wyjściu D9 i nie korzysta z <code>tone()</code>.
+    </div>
+    <p>Wgraj plik przez Arduino IDE. Dla typowego klona Nano wybierz procesor ATmega328P i bootloader pasujący do posiadanej płytki.</p>
+
+    <h3>Aktualny kod firmware v5.1.0</h3>
+    <p>Domyślny plik <code>firmware/zapper_v5/zapper_v5.ino</code> ma polski interfejs LCD. Wersje językowe są generowane jako osobne szkice Arduino — każdy zawiera tylko jeden zestaw napisów. Dla alfabetów, których typowy LCD1602/HD44780 nie potrafi bezpiecznie wyświetlić, wariant używa angielskiego interfejsu LCD. Szczegóły: <code>firmware/LANGUAGES.md</code>.</p>
+    <pre><code id="firmware-current-code">Ładowanie aktualnego firmware v5.1.0...</code></pre>
+
+    <div class="box">
+        <strong>Archiwalny firmware v4.0:</strong> <code>firmware/archive/zapper_v4_0.ino</code><br>
+        Stara wersja została zachowana wyłącznie jako archiwum i nie jest już kodem zalecanym do wgrania.
+    </div>
+
+<div hidden aria-hidden="true"><pre><code>
+/* Historyczny fragment dokumentacji v4 został celowo usunięty z wersji wykonywalnej.
+   Pełny kod archiwalny pozostaje w firmware/archive/zapper_v4_0.ino. */
+
+/*
+
+#define CLK 2
+#define DT 3
+#define SW 4
+#define ZAPPER_PIN 9
+
+// --- USTAWIENIA ---
+double frequency = 1.0; 
+double selectedFreq = 30000.0;
+double step = 1000.0;
+int stepIndex = 4; 
+
+// Czas
+int selectedTimeMinutes = 7; 
+unsigned long therapyDuration = 0;
+unsigned long startTime = 0;
+unsigned long elapsedTime = 0;
+
+// Opcje w menu dolnym
+int subMenuOption = 0; 
+
+// Stany maszyny
+enum State { MAIN_MENU, MANUAL_SETUP, MANUAL_OPTIONS, TIME_SELECT, RUNNING, FINISHED, SLEEP };
+State currentState = MAIN_MENU;
+
+// Obsługa wejścia
+int lastCLKState;
+unsigned long lastButtonPress = 0;
+bool buttonActive = false;
+bool longPressDetected = false;
+bool isStopping = false; // Używane do odliczania stopu i wyłączania
+
+// Cooldown po obudzeniu
+unsigned long wakeUpTime = 0;
+
+// Generator
+unsigned long previousMicros = 0;
+int outputState = LOW;
+
+void setup() {
+  pinMode(CLK, INPUT);
+  pinMode(DT, INPUT);
+  pinMode(SW, INPUT_PULLUP);
+  pinMode(ZAPPER_PIN, OUTPUT);
+  digitalWrite(ZAPPER_PIN, LOW); 
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  
+  showMainMenu(); 
+  lastCLKState = digitalRead(CLK);
+}
+
+void loop() {
+  // Jeśli śpi, nie generuj fali
+  if (currentState != SLEEP) {
+    handleGenerator(); 
+  }
+  
+  handleEncoder();   
+  handleButton();    
+}
+
+// --- GENERATOR ---
+void handleGenerator() {
+  if (currentState == RUNNING) {
+    if (selectedFreq < 1000.0) {
+      unsigned long interval = (unsigned long)(1000000.0 / selectedFreq / 2.0);
+      if (micros() - previousMicros >= interval) {
+        previousMicros = micros();
+        outputState = !outputState;
+        digitalWrite(ZAPPER_PIN, outputState);
+      }
+    } else {
+      tone(ZAPPER_PIN, (unsigned int)selectedFreq);
+    }
+  } else {
+    noTone(ZAPPER_PIN);
+    digitalWrite(ZAPPER_PIN, LOW);
+  }
+}
+
+// --- PRZYCISK ---
+void handleButton() {
+  int btnState = digitalRead(SW);
+
+  // 1. WCIŚNIĘCIE
+  if (btnState == LOW) { 
+    if (!buttonActive) {
+      buttonActive = true;
+      lastButtonPress = millis();
+    }
+    
+    unsigned long pressDuration = millis() - lastButtonPress;
+
+    // JEŚLI ŚPI -> IGNORUJ TRZYMANIE, CZEKAJ NA PUSZCZENIE
+    if (currentState == SLEEP) {
+       return; 
+    }
+
+    // LOGIKA ODLICZANIA (Dla RUNNING i MAIN_MENU)
+    if (currentState == RUNNING || currentState == MAIN_MENU) {
+      if (pressDuration > 500) { 
+        isStopping = true; // Rozpocznij procedurę odliczania
+        lcd.setCursor(0, 3);
+        
+        // Teksty zależne od trybu
+        if (currentState == RUNNING) {
+           if (pressDuration < 1500) lcd.print("ZATRZYMANIE ZA 3..  ");
+           else if (pressDuration < 2500) lcd.print("ZATRZYMANIE ZA 2..  ");
+           else if (pressDuration < 3500) lcd.print("ZATRZYMANIE ZA 1..  ");
+           else {
+             stopTherapy(); // KONIEC TERAPII
+             buttonActive = false; longPressDetected = true; 
+           }
+        } 
+        else if (currentState == MAIN_MENU) {
+           if (pressDuration < 1500) lcd.print("WYLACZANIE ZA 3..   ");
+           else if (pressDuration < 2500) lcd.print("WYLACZANIE ZA 2..   ");
+           else if (pressDuration < 3500) lcd.print("WYLACZANIE ZA 1..   ");
+           else {
+             enterSleep(); // IDŹ SPAĆ
+             buttonActive = false; longPressDetected = true;
+           }
+        }
+      }
+    }
+    // TRYB MANUAL (Wejście w Opcje - tu bez odliczania, po prostu long press)
+    else if (currentState == MANUAL_SETUP) {
+       if (pressDuration > 1000 && !longPressDetected) {
+          longPressDetected = true;
+          currentState = MANUAL_OPTIONS;
+          subMenuOption = 0; 
+          showManualOptions();
+       }
+    }
+  } 
+  // 2. PUSZCZENIE
+  else { 
+    if (buttonActive) {
+      // A. Jeśli był w SLEEP -> Obudź się (to jest ten moment "Click")
+      if (currentState == SLEEP) {
+         wakeUp();
+         buttonActive = false;
+         return;
+      }
+
+      // B. Jeśli anulowaliśmy odliczanie (w Menu lub w Terapii)
+      if (isStopping) {
+         isStopping = false;
+         // Przywróć dolną linię
+         if (currentState == RUNNING) {
+            lcd.setCursor(0, 3); lcd.print("                    "); 
+         } else if (currentState == MAIN_MENU) {
+            showMainMenu(); // Odśwież menu żeby zniknął napis o wyłączaniu
+         }
+      }
+      
+      // C. Zwykłe kliknięcie (z COOLDOWNEM po obudzeniu)
+      // Sprawdzamy czy minęła 1 sekunda od obudzenia (wakeUpTime)
+      if (!longPressDetected && (millis() - lastButtonPress > 50)) {
+        if (millis() - wakeUpTime > 1000) { // <-- TU JEST TWÓJ COOLDOWN
+           if (currentState != RUNNING) handleClick(); 
+        }
+      }
+      buttonActive = false;
+      longPressDetected = false;
+    }
+  }
+}
+
+void handleClick() {
+  if (currentState == MAIN_MENU) {
+    if (frequency == 1.0) { 
+      selectedFreq = 30000.0; currentState = MANUAL_SETUP; lcd.clear(); showManualSetup();
+    } else if (frequency == 2.0) { 
+      selectedFreq = 30000.0; currentState = TIME_SELECT; lcd.clear(); showTimeSelect();
+    } else if (frequency == 3.0) { 
+      selectedFreq = 7.83; currentState = TIME_SELECT; lcd.clear(); showTimeSelect();
+    }
+  } 
+  else if (currentState == MANUAL_SETUP) {
+    changeStep(); showManualSetup();
+  }
+  else if (currentState == MANUAL_OPTIONS) {
+    if (subMenuOption == 0) { currentState = TIME_SELECT; lcd.clear(); showTimeSelect(); }
+    else if (subMenuOption == 1) { selectedFreq = 0.0; currentState = MANUAL_SETUP; lcd.clear(); showManualSetup(); }
+    else if (subMenuOption == 2) { currentState = MAIN_MENU; lcd.clear(); showMainMenu(); }
+  }
+  else if (currentState == TIME_SELECT) {
+    therapyDuration = (unsigned long)selectedTimeMinutes * 60 * 1000;
+    currentState = RUNNING; startTherapy();
+  }
+  else if (currentState == FINISHED) {
+    currentState = MAIN_MENU; showMainMenu();
+  }
+}
+
+// --- USYPIANIE I BUDZENIE ---
+void enterSleep() {
+  currentState = SLEEP;
+  noTone(ZAPPER_PIN);
+  digitalWrite(ZAPPER_PIN, LOW);
+  lcd.clear();
+  lcd.noBacklight(); 
+  // Czekamy aż user puści guzik żeby nie obudzić od razu
+  while(digitalRead(SW) == LOW) { delay(10); }
+}
+
+void wakeUp() {
+  currentState = MAIN_MENU;
+  wakeUpTime = millis(); // Zapisz czas pobudki (do cooldowna)
+  lcd.backlight();   
+  lcd.clear();
+  showMainMenu();
+}
+
+// --- POKRĘTŁO ---
+void handleEncoder() {
+  int currentStateCLK = digitalRead(CLK);
+  if (currentStateCLK != lastCLKState && currentStateCLK == 1) {
+    
+    // Kręcenie w SLEEP też budzi
+    if (currentState == SLEEP) {
+       wakeUp();
+       lastCLKState = currentStateCLK;
+       return;
+    }
+
+    if (digitalRead(DT) != currentStateCLK) { // W prawo
+      if (currentState == MAIN_MENU) {
+        frequency += 1.0; if(frequency > 3.0) frequency = 3.0;
+        showMainMenu();
+      }
+      else if (currentState == MANUAL_SETUP) {
+        selectedFreq += step;
+        showManualSetup();
+      }
+      else if (currentState == MANUAL_OPTIONS) {
+        subMenuOption++; if(subMenuOption > 2) subMenuOption = 2;
+        showManualOptions();
+      }
+      else if (currentState == TIME_SELECT) {
+        selectedTimeMinutes++; if(selectedTimeMinutes > 90) selectedTimeMinutes = 90;
+        showTimeSelect();
+      }
+    } else { // W lewo
+      if (currentState == MAIN_MENU) {
+        frequency -= 1.0; if(frequency < 1.0) frequency = 1.0;
+        showMainMenu();
+      }
+      else if (currentState == MANUAL_SETUP) {
+        selectedFreq -= step; if(selectedFreq < 0.1) selectedFreq = 0.1;
+        showManualSetup();
+      }
+      else if (currentState == MANUAL_OPTIONS) {
+        subMenuOption--; if(subMenuOption < 0) subMenuOption = 0;
+        showManualOptions();
+      }
+      else if (currentState == TIME_SELECT) {
+        selectedTimeMinutes--; if(selectedTimeMinutes < 1) selectedTimeMinutes = 1;
+        showTimeSelect();
+      }
+    }
+  }
+  lastCLKState = currentStateCLK;
+  
+  if (currentState == RUNNING && !isStopping) updateProgressBar();
+}
+
+// --- POMOCNICZE ---
+
+void changeStep() {
+  stepIndex++;
+  if (stepIndex > 5) stepIndex = 0;
+  
+  if (stepIndex == 0) step = 0.1;
+  if (stepIndex == 1) step = 1.0;
+  if (stepIndex == 2) step = 10.0;
+  if (stepIndex == 3) step = 100.0;
+  if (stepIndex == 4) step = 1000.0;
+  if (stepIndex == 5) step = 10000.0;
+}
+
+// --- WYŚWIETLANIE ---
+
+void showManualSetup() {
+  lcd.setCursor(0, 0);
+  lcd.print("FREQ: ");
+  lcd.print(selectedFreq, 1);
+  lcd.print(" Hz      "); 
+
+  lcd.setCursor(0, 2);
+  lcd.print("KROK: ");
+  if(step >= 1000) {
+    lcd.print(step/1000, 0); lcd.print("kHz ");
+  } else if (step < 1) {
+    lcd.print("0.1 Hz");
+  } else {
+    lcd.print(step, 0); lcd.print(" Hz  ");
+  }
+
+  lcd.setCursor(0, 3);
+  lcd.print("[PRZYTRZYMAJ=OPCJE]");
+}
+
+void showManualOptions() {
+  lcd.setCursor(0, 3);
+  lcd.print("                    "); 
+  lcd.setCursor(0, 3);
+  
+  if (subMenuOption == 0) lcd.print(" [START] ZERUJ MENU "); 
+  else if (subMenuOption == 1) lcd.print(" START [ZERUJ] MENU "); 
+  else if (subMenuOption == 2) lcd.print(" START ZERUJ [MENU] "); 
+}
+
+void showMainMenu() {
+  lcd.setCursor(0, 0); lcd.print("WYBIERZ PROGRAM:");
+  lcd.setCursor(0, 1);
+  if(frequency==1.0) lcd.print("> RECZNY (Manual)   ");
+  else               lcd.print("  RECZNY (Manual)   ");
+  lcd.setCursor(0, 2);
+  if(frequency==2.0) lcd.print("> CLARK (30kHz)     ");
+  else               lcd.print("  CLARK (30kHz)     ");
+  lcd.setCursor(0, 3);
+  if(frequency==3.0) lcd.print("> SCHUMANN (7.83Hz) ");
+  else               lcd.print("  SCHUMANN (7.83Hz) ");
+}
+
+void showTimeSelect() {
+  lcd.setCursor(0, 0); lcd.print("USTAW CZAS TERAPII:");
+  lcd.setCursor(5, 2); lcd.print(selectedTimeMinutes); lcd.print(" MINUT   ");
+  lcd.setCursor(0, 3); lcd.print("[KLIKNIJ = START]   ");
+}
+
+void startTherapy() {
+  lcd.clear();
+  lcd.setCursor(0, 0); lcd.print("TERAPIA TRWA...");
+  lcd.setCursor(0, 1); lcd.print(selectedFreq, 1); lcd.print(" Hz");
+  startTime = millis();
+}
+
+void stopTherapy() {
+  currentState = MAIN_MENU; 
+  noTone(ZAPPER_PIN);
+  digitalWrite(ZAPPER_PIN, LOW);
+  lcd.clear();
+  showMainMenu();
+}
+
+void updateProgressBar() {
+  elapsedTime = millis() - startTime;
+  if (elapsedTime >= therapyDuration) {
+    currentState = FINISHED;
+    noTone(ZAPPER_PIN);
+    digitalWrite(ZAPPER_PIN, LOW);
+    lcd.clear();
+    lcd.setCursor(5, 1); lcd.print("KONIEC!");
+    lcd.setCursor(0, 3); lcd.print("[KLIKNIJ ABY WROCIC]");
+    for(int i=0; i<3; i++){ tone(ZAPPER_PIN, 1000); delay(200); noTone(ZAPPER_PIN); delay(200); }
+    return;
+  }
+  if (elapsedTime % 500 < 20) { 
+    unsigned long remaining = (therapyDuration - elapsedTime) / 1000;
+    lcd.setCursor(14, 0);
+    if(remaining/60 < 10) lcd.print("0"); lcd.print(remaining/60); lcd.print(":");
+    if(remaining%60 < 10) lcd.print("0"); lcd.print(remaining%60);
+
+    if (!isStopping) {
+      lcd.setCursor(0, 3); lcd.print("[");
+      int progress = map(elapsedTime, 0, therapyDuration, 0, 18);
+      for (int i = 0; i < 18; i++) {
+        if (i < progress) lcd.print("#"); else lcd.print(" ");
+      }
+      lcd.print("]");
+    }
+  }
+}
+</code></pre></div>
+
+    <!-- SEKCJA 4 -->
+    <h2>4. Instrukcja Obsługi</h2>
+    
+    <h3>Włączanie i Wyłączanie</h3>
+    <ul>
+        <li><strong>Włączenie:</strong> Podłącz kabel USB. Aby wybudzić wygaszony ekran, kliknij gałkę (i odczekaj 1 sekundę).</li>
+        <li><strong>Wyłączenie (Uśpienie):</strong> Będąc w Menu Głównym, przytrzymaj gałkę. Pojawi się odliczanie <em>"WYLACZANIE ZA 3... 2... 1..."</em>. Ekran zgaśnie.</li>
+    </ul>
+
+    <h3>Obsługa Terapii</h3>
+    <ol>
+        <li><strong>Wybór Programu:</strong> Kręć gałką (Manual, Clark, Schumann).</li>
+        <li><strong>Czas:</strong> Ustaw długość zabiegu (np. 7 min).</li>
+        <li><strong>START:</strong> Kliknij gałkę. Dopiero teraz prąd płynie!</li>
+        <li><strong>Stop Awaryjny:</strong> W trakcie terapii przytrzymaj przycisk (zobaczysz odliczanie).</li>
+    </ol>
+
+    <h3>Zasady Bezpieczeństwa</h3>
+    <ul>
+        <li><strong>Mokre Owijki:</strong> Rurki muszą być owinięte ręcznikiem z wodą i solą.</li>
+        <li><strong>Nawodnienie:</strong> Pij wodę przed i po.</li>
+        <li><strong>Rozrusznik serca:</strong> Zakaz używania.</li>
+    </ul>
+
+</div>
+
+<script>
+(function () {
+    const viewer = document.getElementById('wiringViewer');
+    const image = document.getElementById('wiringImage');
+    if (!viewer || !image) return;
+
+    const state = { scale: 0.72, x: 0, y: 0, dragging: false, pointerId: null, startX: 0, startY: 0, baseX: 0, baseY: 0, autoFit: true };
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function apply() {
+        image.style.transform = 'translate(calc(-50% + ' + state.x + 'px), calc(-50% + ' + state.y + 'px)) scale(' + state.scale + ')';
+    }
+
+    function fitScale() {
+        const rect = viewer.getBoundingClientRect();
+        const baseW = 1760;
+        const baseH = 1760 * 1100 / 1800;
+        return clamp(Math.min((rect.width - 24) / baseW, (rect.height - 24) / baseH), 0.28, 1.0);
+    }
+
+    function fitToViewer() {
+        state.scale = fitScale();
+        state.x = 0;
+        state.y = 0;
+        apply();
+    }
+
+    window.wiringZoom = function (factor) {
+        state.autoFit = false;
+        state.scale = clamp(state.scale * factor, 0.28, 2.8);
+        apply();
+    };
+
+    window.wiringReset = function () {
+        state.autoFit = true;
+        fitToViewer();
+    };
+
+    viewer.addEventListener('pointerdown', function (event) {
+        if (event.button !== 0) return;
+        state.dragging = true;
+        state.autoFit = false;
+        state.pointerId = event.pointerId;
+        state.startX = event.clientX;
+        state.startY = event.clientY;
+        state.baseX = state.x;
+        state.baseY = state.y;
+        viewer.classList.add('dragging');
+        viewer.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    });
+
+    viewer.addEventListener('pointermove', function (event) {
+        if (!state.dragging || event.pointerId !== state.pointerId) return;
+        state.x = state.baseX + event.clientX - state.startX;
+        state.y = state.baseY + event.clientY - state.startY;
+        apply();
+        event.preventDefault();
+    });
+
+    function stop(event) {
+        if (!state.dragging) return;
+        state.dragging = false;
+        viewer.classList.remove('dragging');
+        if (event && viewer.hasPointerCapture && viewer.hasPointerCapture(event.pointerId)) viewer.releasePointerCapture(event.pointerId);
+        state.pointerId = null;
+    }
+
+    viewer.addEventListener('pointerup', stop);
+    viewer.addEventListener('pointercancel', stop);
+    viewer.addEventListener('wheel', function (event) {
+        event.preventDefault();
+        window.wiringZoom(event.deltaY < 0 ? 1.12 : 1 / 1.12);
+    }, { passive: false });
+    viewer.addEventListener('dblclick', function (event) {
+        window.wiringReset();
+        event.preventDefault();
+    });
+
+    const ro = new ResizeObserver(function () {
+        if (state.autoFit) fitToViewer();
+    });
+    ro.observe(viewer);
+    requestAnimationFrame(fitToViewer);
+})();
+
+(function () {
+    const stage = document.getElementById('assemblyStage');
+    const world = document.getElementById('assemblyWorld');
+    if (!stage || !world) return;
+
+    const state = {
+        rotX: 54,
+        rotZ: -12,
+        scale: 0.92,
+        panX: 0,
+        panY: 0,
+        dragging: false,
+        panning: false,
+        pointerId: null,
+        lastX: 0,
+        lastY: 0
+    };
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function applyTransform() {
+        world.style.transform =
+            'translate3d(' + state.panX + 'px,' + state.panY + 'px,0) ' +
+            'rotateX(' + state.rotX + 'deg) ' +
+            'rotateZ(' + state.rotZ + 'deg) ' +
+            'scale(' + state.scale + ')';
+    }
+
+    window.setAssemblyView = function (view) {
+        state.panX = 0;
+        state.panY = 0;
+        state.scale = 0.92;
+        if (view === 'top') {
+            state.rotX = 0;
+            state.rotZ = 0;
+        } else if (view === 'front') {
+            state.rotX = 72;
+            state.rotZ = 0;
+        } else {
+            state.rotX = 54;
+            state.rotZ = -12;
+        }
+        applyTransform();
+    };
+
+    window.resetAssemblyView = function () {
+        state.rotX = 54;
+        state.rotZ = -12;
+        state.scale = 0.92;
+        state.panX = 0;
+        state.panY = 0;
+        applyTransform();
+    };
+
+    stage.addEventListener('contextmenu', function (event) {
+        event.preventDefault();
+    });
+
+    stage.addEventListener('pointerdown', function (event) {
+        state.dragging = true;
+        state.panning = event.button === 2 || event.shiftKey;
+        state.pointerId = event.pointerId;
+        state.lastX = event.clientX;
+        state.lastY = event.clientY;
+        stage.classList.add('dragging');
+        stage.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    });
+
+    stage.addEventListener('pointermove', function (event) {
+        if (!state.dragging || event.pointerId !== state.pointerId) return;
+        const dx = event.clientX - state.lastX;
+        const dy = event.clientY - state.lastY;
+        state.lastX = event.clientX;
+        state.lastY = event.clientY;
+
+        if (state.panning || event.shiftKey) {
+            state.panX += dx;
+            state.panY += dy;
+        } else {
+            state.rotZ += dx * 0.45;
+            state.rotX = clamp(state.rotX - dy * 0.45, -85, 85);
+        }
+        applyTransform();
+        event.preventDefault();
+    });
+
+    function endDrag(event) {
+        if (!state.dragging) return;
+        if (event && state.pointerId !== null && event.pointerId !== state.pointerId) return;
+        state.dragging = false;
+        state.panning = false;
+        stage.classList.remove('dragging');
+        if (event && stage.hasPointerCapture && stage.hasPointerCapture(event.pointerId)) {
+            stage.releasePointerCapture(event.pointerId);
+        }
+        state.pointerId = null;
+    }
+
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+
+    stage.addEventListener('wheel', function (event) {
+        const factor = event.deltaY < 0 ? 1.08 : 0.92;
+        state.scale = clamp(state.scale * factor, 0.45, 1.8);
+        applyTransform();
+        event.preventDefault();
+    }, { passive: false });
+
+    stage.addEventListener('dblclick', function (event) {
+        window.resetAssemblyView();
+        event.preventDefault();
+    });
+
+    applyTransform();
+})();
+
+(async function loadCurrentFirmware() {
+    const target = document.getElementById('firmware-current-code');
+    if (!target) return;
+    try {
+        const response = await fetch('/firmware/current', { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        target.textContent = await response.text();
+    } catch (error) {
+        target.textContent = 'Nie udało się wczytać firmware v5.1.0. Sprawdź plik firmware/zapper_v5/zapper_v5.ino.\n\n' + error;
+    }
+})();
+</script>
+<script src="/wiring3d.js"></script>
+<script src="/guide-i18n.js"></script>
+
+</body>
+</html>

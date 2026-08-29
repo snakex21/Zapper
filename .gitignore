@@ -1,0 +1,27 @@
+# Runtime data - local/private
+/data/
+
+# Local development environment
+/.supercli/
+/.local/
+
+# Build and release artifacts
+/build/
+/dist/
+*.exe
+*.zip
+*.sha256
+*.log
+
+# Temporary/test artifacts
+*.tmp
+*.bak
+*.out
+coverage.out
+
+# Editor/OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

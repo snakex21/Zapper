@@ -1,0 +1,767 @@
+[
+  {
+    "name": "Ameba (Entamoeba histolytica)",
+    "frequency": "310 kHz, 333 kHz",
+    "description": "Pełzak czerwonki, ropnie wątroby, biegunki"
+  },
+  {
+    "name": "Babesia (Koinfekcja Boreliozy)",
+    "frequency": "570 kHz",
+    "description": "Pasożyt wewnątrzkomórkowy od kleszczy"
+  },
+  {
+    "name": "Bartonella (Koinfekcja Boreliozy)",
+    "frequency": "364 kHz, 379 kHz",
+    "description": "Koci pazur, bóle stóp, objawy psychiczne"
+  },
+  {
+    "name": "Demodex (Nużeniec)",
+    "frequency": "682 kHz",
+    "description": "Pasożyt skóry, trądzik różowaty, zapalenie powiek"
+  },
+  {
+    "name": "Filarioza",
+    "frequency": "112 kHz",
+    "description": "Pasożyty limfatyczne"
+  },
+  {
+    "name": "Glista ludzka (Ascaris)",
+    "frequency": "408 kHz",
+    "description": "Pasożyt jelitowy, astma pasożytnicza"
+  },
+  {
+    "name": "Glista psia/kocia (Toxocara)",
+    "frequency": "380 kHz",
+    "description": "Toksokaroza, larwy wędrujące"
+  },
+  {
+    "name": "Lamblie (Giardia)",
+    "frequency": "421 kHz, 426 kHz",
+    "description": "Pasożyty jelitowe, biegunki, bóle brzucha"
+  },
+  {
+    "name": "Leishmania",
+    "frequency": "600 kHz",
+    "description": "Choroba tropikalna, owrzodzenia"
+  },
+  {
+    "name": "Motylica wątrobowa (Fasciola)",
+    "frequency": "427 kHz",
+    "description": "Kluczowy pasożyt wg Dr Clark, problemy z wątrobą"
+  },
+  {
+    "name": "Owsiki (Pinworm)",
+    "frequency": "423 kHz",
+    "description": "Pasożyt jelitowy (częsty u dzieci)"
+  },
+  {
+    "name": "Pasożyty (Ogólny)",
+    "frequency": "30 kHz (Zapper Classic)",
+    "description": "Uniwersalna częstotliwość na większość pasożytów"
+  },
+  {
+    "name": "Przywra jelitowa (Fasciolopsis buski)",
+    "frequency": "434 kHz",
+    "description": "Wg Dr Clark powiązana z nowotworami"
+  },
+  {
+    "name": "Przywra krwi (Schistosoma)",
+    "frequency": "429 kHz",
+    "description": "Bilharcjoza, problemy z pęcherzem"
+  },
+  {
+    "name": "Przywra płucna",
+    "frequency": "440 kHz",
+    "description": "Kaszel, problemy oddechowe"
+  },
+  {
+    "name": "Rzęsistek pochwowy",
+    "frequency": "378 kHz",
+    "description": "Infekcje intymne, upławy"
+  },
+  {
+    "name": "Świerzb",
+    "frequency": "435 kHz",
+    "description": "Pasożytnicza choroba skóry, swędzenie"
+  },
+  {
+    "name": "Tasiemiec bąblowiec (Echinococcus)",
+    "frequency": "453 kHz",
+    "description": "Cysty w wątrobie/płucach (bardzo groźny!)"
+  },
+  {
+    "name": "Tasiemiec nieuzbrojony",
+    "frequency": "448 kHz",
+    "description": "Pasożyt od wołowiny"
+  },
+  {
+    "name": "Tasiemiec uzbrojony",
+    "frequency": "450 kHz",
+    "description": "Pasożyt od wieprzowiny"
+  },
+  {
+    "name": "Tęgoryjec dwunastnicy",
+    "frequency": "440 kHz",
+    "description": "Anemia, bóle brzucha"
+  },
+  {
+    "name": "Toksoplazmoza",
+    "frequency": "395 kHz",
+    "description": "Pasożyt od kotów/mięsa, groźny w ciąży"
+  },
+  {
+    "name": "Węgorek jelitowy",
+    "frequency": "400 kHz",
+    "description": "Uporczywe biegunki, kaszel"
+  },
+  {
+    "name": "Włosień kręty (Trichinella)",
+    "frequency": "404 kHz",
+    "description": "Bóle mięśni, gorączka (od dziczyzny/wieprzowiny)"
+  },
+  {
+    "name": "Błonica (Corynebacterium)",
+    "frequency": "340 kHz",
+    "description": "Infekcja gardła, duszności"
+  },
+  {
+    "name": "Bordetella pertussis (Krztusiec)",
+    "frequency": "46 kHz",
+    "description": "Kaszel, infekcje dróg oddechowych"
+  },
+  {
+    "name": "Borelioza (Lyme)",
+    "frequency": "380 kHz, 432 Hz",
+    "description": "Krętki boreliozy (wspomagająco)"
+  },
+  {
+    "name": "Campylobacter",
+    "frequency": "332 kHz",
+    "description": "Zatrucia pokarmowe, biegunki"
+  },
+  {
+    "name": "Chlamydia pneumoniae",
+    "frequency": "376 kHz",
+    "description": "Infekcje płuc, kaszel przewlekły"
+  },
+  {
+    "name": "Chlamydia trachomatis",
+    "frequency": "379 kHz",
+    "description": "Infekcje układu moczowo-płciowego"
+  },
+  {
+    "name": "Clostridium difficile",
+    "frequency": "387 kHz",
+    "description": "Zapalenie jelit, biegunki poantybiotykowe"
+  },
+  {
+    "name": "E. Coli (Pałeczka okrężnicy)",
+    "frequency": "356 kHz, 392 kHz",
+    "description": "Zakażenia układu moczowego, zatrucia"
+  },
+  {
+    "name": "Enterococcus faecalis",
+    "frequency": "365 kHz",
+    "description": "Zakażenia układu moczowego, bakteria jelitowa"
+  },
+  {
+    "name": "Gardnerella vaginalis",
+    "frequency": "338 kHz",
+    "description": "Infekcje intymne, rybi zapach"
+  },
+  {
+    "name": "Gronkowiec złocisty (Staphylococcus)",
+    "frequency": "376 - 381 kHz",
+    "description": "Infekcje skóry, ropnie, zapalenia"
+  },
+  {
+    "name": "Gruźlica (Mycobacterium)",
+    "frequency": "430 kHz",
+    "description": "Prątki gruźlicy (wspomagająco)"
+  },
+  {
+    "name": "Helicobacter Pylori",
+    "frequency": "351 - 357 kHz",
+    "description": "Wrzody żołądka, problemy trawienne"
+  },
+  {
+    "name": "Kiła (Treponema pallidum)",
+    "frequency": "347 kHz",
+    "description": "Choroba weneryczna"
+  },
+  {
+    "name": "Klebsiella pneumoniae",
+    "frequency": "417 kHz, 424 kHz",
+    "description": "Zapalenie płuc, infekcje szpitalne"
+  },
+  {
+    "name": "Legionella",
+    "frequency": "723 Hz",
+    "description": "Choroba legionistów, klimatyzacja"
+  },
+  {
+    "name": "Listeria",
+    "frequency": "377 kHz",
+    "description": "Zatrucia pokarmowe (nabiał)"
+  },
+  {
+    "name": "Mycoplasma",
+    "frequency": "323 kHz, 346 kHz",
+    "description": "Atypowe zapalenie płuc, zmęczenie"
+  },
+  {
+    "name": "Paciorkowiec (Streptococcus)",
+    "frequency": "368 kHz, 373 kHz",
+    "description": "Angina, bóle gardła, infekcje zębów"
+  },
+  {
+    "name": "Pneumokoki",
+    "frequency": "366 kHz",
+    "description": "Zapalenie płuc, ucha, opon mózgowych"
+  },
+  {
+    "name": "Proteus mirabilis",
+    "frequency": "324 kHz",
+    "description": "Zakażenia układu moczowego"
+  },
+  {
+    "name": "Pseudomonas (Ropa błękitna)",
+    "frequency": "174 kHz, 331 kHz",
+    "description": "Trudne infekcje ran, ucha, płuc"
+  },
+  {
+    "name": "Rzeżączka (Neisseria)",
+    "frequency": "334 kHz",
+    "description": "Choroba weneryczna"
+  },
+  {
+    "name": "Salmonella",
+    "frequency": "329 kHz, 386 kHz",
+    "description": "Zatrucia pokarmowe"
+  },
+  {
+    "name": "Shigella",
+    "frequency": "318 kHz",
+    "description": "Czerwonka, ostre biegunki"
+  },
+  {
+    "name": "Szkarlatyna",
+    "frequency": "361 kHz",
+    "description": "Płonica, wysypka, malinowy język"
+  },
+  {
+    "name": "Tężec",
+    "frequency": "554 Hz",
+    "description": "Infekcja bakteryjna"
+  },
+  {
+    "name": "Ureaplasma",
+    "frequency": "322 kHz",
+    "description": "Infekcje układu moczowo-płciowego"
+  },
+  {
+    "name": "Yersinia",
+    "frequency": "333 kHz",
+    "description": "Bóle stawów, problemy jelitowe"
+  },
+  {
+    "name": "Adenowirus",
+    "frequency": "393 kHz",
+    "description": "Infekcje dróg oddechowych, przeziębienia"
+  },
+  {
+    "name": "Coxsackie (Wirus Bostoński)",
+    "frequency": "364 kHz, 369 kHz",
+    "description": "Choroba dłoni, stóp i jamy ustnej"
+  },
+  {
+    "name": "Cytomegalowirus (CMV)",
+    "frequency": "409 kHz",
+    "description": "Wirus z grupy herpes, osłabienie odporności"
+  },
+  {
+    "name": "Denga",
+    "frequency": "355 kHz",
+    "description": "Gorączka tropikalna"
+  },
+  {
+    "name": "Epstein Barr Wirus (EBV)",
+    "frequency": "372 kHz, 380 kHz",
+    "description": "Mononukleoza, chroniczne zmęczenie"
+  },
+  {
+    "name": "Grypa (Influenza)",
+    "frequency": "313 - 342 kHz",
+    "description": "Wirus grypy, różne szczepy"
+  },
+  {
+    "name": "Hantawirus",
+    "frequency": "363 kHz",
+    "description": "Gorączka krwotoczna"
+  },
+  {
+    "name": "HIV / AIDS (Wspomaganie)",
+    "frequency": "365 kHz",
+    "description": "Wsparcie odporności (nie zastępuje leków!)"
+  },
+  {
+    "name": "HPV (Wirus Brodawczaka)",
+    "frequency": "404 kHz",
+    "description": "Wirus brodawczaka ludzkiego"
+  },
+  {
+    "name": "Koronawirus (SARS-CoV-2)",
+    "frequency": "363 kHz, 1000 Hz",
+    "description": "Wspomaganie przy infekcji COVID"
+  },
+  {
+    "name": "Norowirus",
+    "frequency": "353 kHz",
+    "description": "Grypa żołądkowa, wymioty"
+  },
+  {
+    "name": "Odra (Measles)",
+    "frequency": "369 kHz",
+    "description": "Wysypka, gorączka (choroba zakaźna)"
+  },
+  {
+    "name": "Opryszczka (Herpes Simplex)",
+    "frequency": "292 kHz, 345 kHz",
+    "description": "Wirus opryszczki wargowej i narządów"
+  },
+  {
+    "name": "Ospa wietrzna (Varicella)",
+    "frequency": "345 kHz, 368 kHz",
+    "description": "Swędząca wysypka, wirus ospy"
+  },
+  {
+    "name": "Polio",
+    "frequency": "368 kHz",
+    "description": "Choroba Heinego-Medina"
+  },
+  {
+    "name": "Półpasiec (Herpes Zoster)",
+    "frequency": "416 kHz, 418 kHz",
+    "description": "Bolesna wysypka wirusowa"
+  },
+  {
+    "name": "Rotawirus",
+    "frequency": "333 kHz",
+    "description": "Grypa żołądkowa, biegunki"
+  },
+  {
+    "name": "Różyczka (Rubella)",
+    "frequency": "359 kHz",
+    "description": "Wysypka, powiększone węzły chłonne"
+  },
+  {
+    "name": "Świnka (Mumps)",
+    "frequency": "242 kHz",
+    "description": "Zapalenie ślinianek"
+  },
+  {
+    "name": "Wścieklizna",
+    "frequency": "355 kHz",
+    "description": "Groźna choroba wirusowa"
+  },
+  {
+    "name": "WZW A (Hepatitis A)",
+    "frequency": "321 kHz",
+    "description": "Wirusowe zapalenie wątroby typu A"
+  },
+  {
+    "name": "WZW B (Hepatitis B)",
+    "frequency": "414 kHz",
+    "description": "Wirusowe zapalenie wątroby typu B"
+  },
+  {
+    "name": "WZW C (Hepatitis C)",
+    "frequency": "166 kHz",
+    "description": "Wirusowe zapalenie wątroby typu C"
+  },
+  {
+    "name": "Aflatoksyna",
+    "frequency": "438 kHz, 444 kHz",
+    "description": "Toksyny pleśniowe, obciążenie wątroby"
+  },
+  {
+    "name": "Aspergillus (Pleśń)",
+    "frequency": "197 kHz",
+    "description": "Infekcje płuc, alergie, pleśniaki"
+  },
+  {
+    "name": "Candida albicans",
+    "frequency": "384 - 388 kHz",
+    "description": "Grzybica, drożdżaki, zmęczenie"
+  },
+  {
+    "name": "Grzybica stóp / paznokci",
+    "frequency": "380 kHz, 465 Hz",
+    "description": "Infekcje grzybicze skóry"
+  },
+  {
+    "name": "Histoplasma",
+    "frequency": "298 kHz",
+    "description": "Grzybica płuc"
+  },
+  {
+    "name": "Pneumocystis",
+    "frequency": "405 kHz",
+    "description": "Zapalenie płuc u osób z osłabioną odpornością"
+  },
+  {
+    "name": "ADHD / Koncentracja",
+    "frequency": "10 Hz, 14 Hz",
+    "description": "Poprawa skupienia (fale Beta)"
+  },
+  {
+    "name": "Alzheimer (Wspomaganie)",
+    "frequency": "430 Hz",
+    "description": "Wsparcie funkcji poznawczych"
+  },
+  {
+    "name": "Autyzm (Detoks)",
+    "frequency": "3176 Hz",
+    "description": "Wspomaganie usuwania metali ciężkich"
+  },
+  {
+    "name": "Bielactwo",
+    "frequency": "440 Hz, 600 Hz",
+    "description": "Problemy z pigmentacją skóry"
+  },
+  {
+    "name": "Choroba Leśniowskiego-Crohna",
+    "frequency": "110 Hz",
+    "description": "Zapalenie jelit"
+  },
+  {
+    "name": "Cukrzyca",
+    "frequency": "35 kHz, 15 Hz",
+    "description": "Regulacja poziomu cukru (wspomagająco)"
+  },
+  {
+    "name": "Depresja / Lęki",
+    "frequency": "3.5 Hz, 7.83 Hz",
+    "description": "Harmonizacja nastroju"
+  },
+  {
+    "name": "Fibromialgia",
+    "frequency": "328 Hz, 20 Hz",
+    "description": "Przewlekły ból mięśni i zmęczenie"
+  },
+  {
+    "name": "Hashimoto (Tarczyca)",
+    "frequency": "35 Hz, 160 Hz",
+    "description": "Autoimmunologiczne zapalenie tarczycy"
+  },
+  {
+    "name": "Łuszczyca",
+    "frequency": "104 Hz, 2180 Hz",
+    "description": "Choroby autoimmunologiczne skóry"
+  },
+  {
+    "name": "Miażdżyca",
+    "frequency": "10000 Hz",
+    "description": "Wspomaganie układu krążenia"
+  },
+  {
+    "name": "Nadciśnienie",
+    "frequency": "3176 Hz, 10000 Hz",
+    "description": "Regulacja ciśnienia krwi"
+  },
+  {
+    "name": "Parkinson (Wspomaganie)",
+    "frequency": "6000 Hz, 33 Hz",
+    "description": "Wsparcie układu nerwowego"
+  },
+  {
+    "name": "Reumatoidalne Zapalenie Stawów (RZS)",
+    "frequency": "10 kHz, 15 Hz",
+    "description": "Bóle stawów, autoagresja"
+  },
+  {
+    "name": "SM (Stwardnienie Rozsiane)",
+    "frequency": "5000 Hz, 2720 Hz",
+    "description": "Wspomaganie układu nerwowego (ostrożnie!)"
+  },
+  {
+    "name": "Toczeń (Lupus)",
+    "frequency": "2008 Hz, 880 Hz",
+    "description": "Choroba autoimmunologiczna"
+  },
+  {
+    "name": "Zmęczenie Chroniczne (CFS)",
+    "frequency": "424 Hz, 660 Hz",
+    "description": "Zespół przewlekłego zmęczenia"
+  },
+  {
+    "name": "Endometrioza",
+    "frequency": "246 Hz, 800 Hz",
+    "description": "Bolesne miesiączki, problemy hormonalne"
+  },
+  {
+    "name": "Impotencja",
+    "frequency": "10000 Hz",
+    "description": "Wspomaganie krążenia i potencji"
+  },
+  {
+    "name": "Menopauza",
+    "frequency": "480 Hz",
+    "description": "Łagodzenie uderzeń gorąca"
+  },
+  {
+    "name": "Mięśniaki macicy",
+    "frequency": "253 Hz, 446 Hz",
+    "description": "Wspomaganie redukcji zmian"
+  },
+  {
+    "name": "Prostata (Przerost)",
+    "frequency": "9.4 Hz, 2127 Hz",
+    "description": "Problemy z oddawaniem moczu"
+  },
+  {
+    "name": "Zapalenie jajników",
+    "frequency": "572 Hz",
+    "description": "Bóle podbrzusza, infekcje"
+  },
+  {
+    "name": "Alergia",
+    "frequency": "3.5 Hz, 30 kHz",
+    "description": "Wspomaganie przy reakcjach alergicznych"
+  },
+  {
+    "name": "Alkoholizm",
+    "frequency": "10000 Hz",
+    "description": "Wspomaganie wychodzenia z nałogu"
+  },
+  {
+    "name": "Angina",
+    "frequency": "787 Hz, 776 Hz",
+    "description": "Zapalenie gardła i migdałków"
+  },
+  {
+    "name": "Astma",
+    "frequency": "1233 Hz, 1283 Hz",
+    "description": "Problemy oddechowe, duszności"
+  },
+  {
+    "name": "Bezsenność",
+    "frequency": "3.6 Hz (Delta)",
+    "description": "Fale mózgowe na głęboki sen"
+  },
+  {
+    "name": "Ból Głowy / Migrena",
+    "frequency": "144 Hz, 160 Hz",
+    "description": "Bóle napięciowe i naczyniowe"
+  },
+  {
+    "name": "Ból ogólny",
+    "frequency": "3000 Hz, 95 Hz",
+    "description": "Łagodzenie bólu różnego pochodzenia"
+  },
+  {
+    "name": "Ból Pleców",
+    "frequency": "41.2 Hz, 212 Hz",
+    "description": "Bóle kręgosłupa, lędźwi"
+  },
+  {
+    "name": "Detoks (Ogólny)",
+    "frequency": "10000 Hz, 3176 Hz",
+    "description": "Oczyszczanie organizmu z toksyn"
+  },
+  {
+    "name": "Hemoroidy",
+    "frequency": "447 Hz",
+    "description": "Żylaki odbytu, stan zapalny"
+  },
+  {
+    "name": "Jaskra / Wzrok",
+    "frequency": "1600 Hz",
+    "description": "Problemy z ciśnieniem oka"
+  },
+  {
+    "name": "Jelito Drażliwe (IBS)",
+    "frequency": "422 Hz, 100 Hz",
+    "description": "Bóle brzucha, wzdęcia, biegunki/zaparcia"
+  },
+  {
+    "name": "Kamica żółciowa",
+    "frequency": "6000 Hz",
+    "description": "Wspomaganie przy kamieniach"
+  },
+  {
+    "name": "Kamienie nerkowe",
+    "frequency": "6000 Hz",
+    "description": "Wspomaganie rozbijania złogów"
+  },
+  {
+    "name": "Kaszel",
+    "frequency": "1234 Hz, 514 Hz",
+    "description": "Infekcje dróg oddechowych"
+  },
+  {
+    "name": "Katar / Zatoki",
+    "frequency": "300 - 320 kHz",
+    "description": "Zapalenie zatok, katar"
+  },
+  {
+    "name": "Paradontoza / Dziąsła",
+    "frequency": "393 kHz, 373 kHz",
+    "description": "Zapalenie dziąseł, bakterie jamy ustnej"
+  },
+  {
+    "name": "Rwa kulszowa",
+    "frequency": "136 Hz, 254 Hz",
+    "description": "Ból nerwu kulszowego"
+  },
+  {
+    "name": "Stres / Uspokojenie",
+    "frequency": "7.83 Hz (Schumann)",
+    "description": "Rezonans Ziemi, harmonizacja"
+  },
+  {
+    "name": "Szumy uszne (Tinnitus)",
+    "frequency": "20 Hz, 727 Hz",
+    "description": "Dzwonienie w uszach"
+  },
+  {
+    "name": "Trądzik (Acne)",
+    "frequency": "564 kHz",
+    "description": "Wypryski skórne"
+  },
+  {
+    "name": "Wrzody",
+    "frequency": "727 Hz, 880 Hz",
+    "description": "Stany zapalne błony śluzowej"
+  },
+  {
+    "name": "Wzdęcia / Gazy",
+    "frequency": "422 Hz",
+    "description": "Problemy jelitowe"
+  },
+  {
+    "name": "Zapalenie pęcherza",
+    "frequency": "5000 Hz, 800 Hz",
+    "description": "Infekcje dróg moczowych"
+  },
+  {
+    "name": "Zapalenie ucha",
+    "frequency": "310 kHz",
+    "description": "Ból i infekcje ucha"
+  },
+  {
+    "name": "Zgaga / Refluks",
+    "frequency": "832 Hz, 2720 Hz",
+    "description": "Nadkwasota, problemy żołądkowe"
+  },
+  {
+    "name": "Nadnercza (Wspomaganie)",
+    "frequency": "1335 Hz",
+    "description": "Stymulacja pracy nadnerczy"
+  },
+  {
+    "name": "Nerki (Wspomaganie)",
+    "frequency": "440 Hz",
+    "description": "Regeneracja nerek"
+  },
+  {
+    "name": "Płuca (Wspomaganie)",
+    "frequency": "220 Hz",
+    "description": "Poprawa wydolności oddechowej"
+  },
+  {
+    "name": "Serce (Wspomaganie)",
+    "frequency": "10.5 Hz",
+    "description": "Wzmocnienie pracy serca"
+  },
+  {
+    "name": "Trzustka (Wspomaganie)",
+    "frequency": "15 Hz",
+    "description": "Wsparcie produkcji enzymów/insuliny"
+  },
+  {
+    "name": "Wątroba (Regeneracja)",
+    "frequency": "30 kHz",
+    "description": "Wspomaganie detoksu wątroby"
+  },
+  {
+    "name": "Solfeggio 174 Hz",
+    "frequency": "174 Hz",
+    "description": "Uśmierzanie bólu, poczucie bezpieczeństwa"
+  },
+  {
+    "name": "Solfeggio 285 Hz",
+    "frequency": "285 Hz",
+    "description": "Regeneracja tkanek, gojenie ran"
+  },
+  {
+    "name": "Solfeggio 396 Hz",
+    "frequency": "396 Hz",
+    "description": "Uwalnianie od winy i strachu"
+  },
+  {
+    "name": "Solfeggio 417 Hz",
+    "frequency": "417 Hz",
+    "description": "Odwracanie biegu wydarzeń, ułatwianie zmian"
+  },
+  {
+    "name": "Solfeggio 528 Hz",
+    "frequency": "528 Hz",
+    "description": "Naprawa DNA, transformacja, 'Częstotliwość Cudów'"
+  },
+  {
+    "name": "Solfeggio 639 Hz",
+    "frequency": "639 Hz",
+    "description": "Naprawa relacji, połączenia międzyludzkie"
+  },
+  {
+    "name": "Solfeggio 741 Hz",
+    "frequency": "741 Hz",
+    "description": "Budzenie intuicji, oczyszczanie z toksyn"
+  },
+  {
+    "name": "Solfeggio 852 Hz",
+    "frequency": "852 Hz",
+    "description": "Powrót do porządku duchowego"
+  },
+  {
+    "name": "Solfeggio 963 Hz",
+    "frequency": "963 Hz",
+    "description": "Aktywacja szyszynki, Boska Świadomość"
+  },
+  {
+    "name": "Czakra 1 (Podstawy)",
+    "frequency": "396 Hz / 256 Hz",
+    "description": "Muladhara - Stabilność, przetrwanie"
+  },
+  {
+    "name": "Czakra 2 (Sakralna)",
+    "frequency": "417 Hz / 288 Hz",
+    "description": "Svadhishthana - Kreatywność, seksualność"
+  },
+  {
+    "name": "Czakra 3 (Splotu)",
+    "frequency": "528 Hz / 320 Hz",
+    "description": "Manipura - Moc osobista, wola"
+  },
+  {
+    "name": "Czakra 4 (Serca)",
+    "frequency": "639 Hz / 341 Hz",
+    "description": "Anahata - Miłość, współczucie"
+  },
+  {
+    "name": "Czakra 5 (Gardła)",
+    "frequency": "741 Hz / 384 Hz",
+    "description": "Vishuddha - Komunikacja, prawda"
+  },
+  {
+    "name": "Czakra 6 (Trzecie Oko)",
+    "frequency": "852 Hz / 448 Hz",
+    "description": "Ajna - Intuicja, wgląd"
+  },
+  {
+    "name": "Czakra 7 (Korony)",
+    "frequency": "963 Hz / 480 Hz",
+    "description": "Sahasrara - Duchowość, oświecenie"
+  }
+]

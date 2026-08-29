@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Zapper — czytelny schemat 2D z płytką stykową</title>
+  <desc id="desc">Widok z góry pokazujący LCD1602 I2C, Arduino Nano osadzone na płytce stykowej A-J 1-30, KY-040, rezystor 1 kΩ w otworach i5-i1 oraz osobne czerwony i czarny krokodylek.</desc>
+  <defs>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-opacity=".16"/></filter>
+    <linearGradient id="metal" x1="0" x2="1"><stop offset="0" stop-color="#70787d"/><stop offset=".35" stop-color="#dde2e4"/><stop offset=".72" stop-color="#90989c"/><stop offset="1" stop-color="#e7eaeb"/></linearGradient>
+    <linearGradient id="shaft" x1="0" x2="1"><stop offset="0" stop-color="#747c80"/><stop offset=".5" stop-color="#d9dddf"/><stop offset="1" stop-color="#7e878b"/></linearGradient>
+    <pattern id="holes" width="48" height="22" patternUnits="userSpaceOnUse"><circle cx="24" cy="11" r="5" fill="#8e999f" stroke="#68747a" stroke-width="1"/></pattern>
+    <style>
+      .t{font-family:Segoe UI,Arial,sans-serif;fill:#17202a}.mono{font-family:Consolas,monospace}.big{font-size:30px;font-weight:800}.med{font-size:19px;font-weight:800}.small{font-size:15px;font-weight:650}.tiny{font-size:12px;font-weight:700}.white{fill:#fff;font-family:Segoe UI,Arial,sans-serif;font-weight:800}
+      .board{fill:#f2efe4;stroke:#b7b3a8;stroke-width:4}.nano{fill:#147dae;stroke:#0c5678;stroke-width:4}.lcd{fill:#17864d;stroke:#0b5d35;stroke-width:4}.ky{fill:#171a1b;stroke:#050606;stroke-width:4}.screen{fill:#173f99;stroke:#111820;stroke-width:8}.pin{fill:#e0e4e6;stroke:#6d777c;stroke-width:2}.hot{fill:#fff3e0;stroke:#ef6c00;stroke-width:3}.gold{fill:#d8ad3e;stroke:#80651e;stroke-width:1}
+      .wire{fill:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff)}.gnd{stroke:#242424}.vcc{stroke:#d32f2f}.sda{stroke:#2e7d32}.scl{stroke:#1565c0}.clk{stroke:#f39c12}.dt{stroke:#8e24aa}.sw{stroke:#00838f}.out{stroke:#ef6c00}
+      .strip{stroke-width:14;stroke-linecap:round;opacity:.16}.panel{fill:#fff;stroke:#d7dfe3;stroke-width:2}.chip{fill:#fff;stroke:#c7d2d7;stroke-width:2}.chipHot{fill:#fff8e1;stroke:#ef6c00;stroke-width:2}.clipRed{fill:#c62828;stroke:#7f1010;stroke-width:4}.clipBlack{fill:#242424;stroke:#050505;stroke-width:4}
+    </style>
+  </defs>
+
+  <rect width="1800" height="1100" fill="#f7fafb"/>
+  <text class="t big" x="48" y="52">SCHEMAT POŁĄCZEŃ — PŁYTKA STYKOWA + MODUŁY</text>
+  <text class="t small" x="48" y="80">Przewody kończą się w konkretnych otworach płytki. Nano jest pokazane dokładnie na płytce, więc widać gdzie trafia rezystor.</text>
+
+  <!-- LCD1602 -->
+  <g filter="url(#shadow)" transform="translate(45 245)">
+    <rect class="lcd" x="0" y="0" width="440" height="235" rx="10"/>
+    <circle cx="25" cy="25" r="11" fill="#f3e4a9" stroke="#8e7022" stroke-width="3"/><circle cx="415" cy="25" r="11" fill="#f3e4a9" stroke="#8e7022" stroke-width="3"/>
+    <circle cx="25" cy="210" r="11" fill="#f3e4a9" stroke="#8e7022" stroke-width="3"/><circle cx="415" cy="210" r="11" fill="#f3e4a9" stroke="#8e7022" stroke-width="3"/>
+    <rect x="30" y="42" width="330" height="130" rx="5" fill="#171b1d"/>
+    <rect class="screen" x="50" y="60" width="290" height="94" rx="3"/>
+    <g fill="#86a9ff" opacity=".42"><rect x="72" y="81" width="12" height="18"/><rect x="92" y="81" width="12" height="18"/><rect x="112" y="81" width="12" height="18"/><rect x="132" y="81" width="12" height="18"/><rect x="152" y="81" width="12" height="18"/><rect x="172" y="81" width="12" height="18"/><rect x="192" y="81" width="12" height="18"/><rect x="212" y="81" width="12" height="18"/><rect x="72" y="113" width="12" height="18"/><rect x="92" y="113" width="12" height="18"/><rect x="112" y="113" width="12" height="18"/><rect x="132" y="113" width="12" height="18"/><rect x="152" y="113" width="12" height="18"/><rect x="172" y="113" width="12" height="18"/><rect x="192" y="113" width="12" height="18"/><rect x="212" y="113" width="12" height="18"/></g>
+    <text class="white med" x="190" y="205" text-anchor="middle">LCD1602 16×2</text>
+    <!-- backpack I2C: piny pokazane tak samo wyraźnie jak w KY-040 -->
+    <g transform="translate(350 20)">
+      <rect x="0" y="0" width="145" height="170" rx="6" fill="#1b1f20" stroke="#050606" stroke-width="4"/>
+      <rect x="28" y="42" width="56" height="28" fill="#262a2c" stroke="#666" stroke-width="2"/>
+      <rect x="103" y="18" width="28" height="28" rx="3" fill="#1565c0" stroke="#0d3c73" stroke-width="2"/><circle cx="117" cy="32" r="6" fill="#d8dde0"/>
+      <text class="white tiny" x="72" y="92" text-anchor="middle">PCF8574</text><text class="white tiny" x="72" y="110" text-anchor="middle">I2C BACKPACK</text>
+      <g transform="translate(12 142)">
+        <rect x="0" y="0" width="118" height="18" rx="3" fill="#101213" stroke="#050606" stroke-width="2"/>
+        <rect class="gold" x="2" y="8" width="18" height="60"/><rect class="gold" x="34" y="8" width="18" height="60"/><rect class="gold" x="66" y="8" width="18" height="60"/><rect class="gold" x="98" y="8" width="18" height="60"/>
+        <circle cx="11" cy="8" r="8" fill="#c7cdd0" stroke="#676f73" stroke-width="2"/><circle cx="43" cy="8" r="8" fill="#c7cdd0" stroke="#676f73" stroke-width="2"/><circle cx="75" cy="8" r="8" fill="#c7cdd0" stroke="#676f73" stroke-width="2"/><circle cx="107" cy="8" r="8" fill="#c7cdd0" stroke="#676f73" stroke-width="2"/>
+        <text class="white tiny" x="11" y="-8" text-anchor="middle">GND</text><text class="white tiny" x="43" y="-8" text-anchor="middle">VCC</text><text class="white tiny" x="75" y="-8" text-anchor="middle">SDA</text><text class="white tiny" x="107" y="-8" text-anchor="middle">SCL</text>
+        <circle cx="11" cy="68" r="7" fill="#fff" stroke="#242424" stroke-width="4"/><circle cx="43" cy="68" r="7" fill="#fff" stroke="#d32f2f" stroke-width="4"/><circle cx="75" cy="68" r="7" fill="#fff" stroke="#2e7d32" stroke-width="4"/><circle cx="107" cy="68" r="7" fill="#fff" stroke="#1565c0" stroke-width="4"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Płytka stykowa -->
+  <g id="breadboard" filter="url(#shadow)">
+    <rect class="board" x="620" y="125" width="570" height="815" rx="16"/>
+    <rect x="638" y="152" width="220" height="680" fill="url(#holes)" opacity=".95"/>
+    <rect x="950" y="152" width="220" height="680" fill="url(#holes)" opacity=".95"/>
+    <rect x="874" y="142" width="60" height="710" fill="#d9d6cb" stroke="#c1bdb2" stroke-width="2"/>
+    <text class="t med" x="905" y="905" text-anchor="middle">PŁYTKA STYKOWA 400 PÓL · A–J / 1–30</text>
+    <!-- kolumny -->
+    <g class="t small" text-anchor="middle"><text x="650" y="147">A</text><text x="698" y="147">B</text><text x="746" y="147">C</text><text x="794" y="147">D</text><text x="842" y="147">E</text><text x="948" y="147">F</text><text x="996" y="147">G</text><text x="1044" y="147">H</text><text x="1092" y="147">I</text><text x="1140" y="147">J</text></g>
+    <!-- ważne rzędy -->
+    <g class="t tiny" text-anchor="middle"><text x="604" y="185">1</text><text x="604" y="273">5</text><text x="604" y="361">9</text><text x="604" y="383">10</text><text x="604" y="405">11</text><text x="604" y="427">12</text><text x="604" y="449">13</text><text x="604" y="493">15</text><text x="1205" y="185">1</text><text x="1205" y="273">5</text><text x="1205" y="361">9</text><text x="1205" y="383">10</text><text x="1205" y="405">11</text><text x="1205" y="427">12</text><text x="1205" y="449">13</text><text x="1205" y="493">15</text></g>
+
+    <!-- zaznaczone wewnętrzne połączenia breadboardu -->
+    <line class="strip sda" x1="650" y1="356" x2="842" y2="356"/><line class="strip scl" x1="650" y1="378" x2="842" y2="378"/><line class="strip vcc" x1="650" y1="444" x2="842" y2="444"/><line class="strip gnd" x1="650" y1="488" x2="842" y2="488"/>
+    <line class="strip sw" x1="948" y1="378" x2="1140" y2="378"/><line class="strip dt" x1="948" y1="400" x2="1140" y2="400"/><line class="strip clk" x1="948" y1="422" x2="1140" y2="422"/><line class="strip gnd" x1="948" y1="444" x2="1140" y2="444"/>
+    <line class="strip out" x1="948" y1="268" x2="1140" y2="268"/><line class="strip out" x1="948" y1="180" x2="1140" y2="180"/>
+
+    <!-- używane otwory -->
+    <g><circle class="hot" cx="650" cy="356" r="9"/><circle class="hot" cx="650" cy="378" r="9"/><circle class="hot" cx="650" cy="444" r="9"/><circle class="hot" cx="650" cy="488" r="9"/>
+      <circle class="hot" cx="1140" cy="378" r="9"/><circle class="hot" cx="1140" cy="400" r="9"/><circle class="hot" cx="1140" cy="422" r="9"/><circle class="hot" cx="1140" cy="444" r="9"/><circle class="hot" cx="698" cy="444" r="9"/><circle class="hot" cx="698" cy="488" r="9"/>
+      <circle class="hot" cx="1092" cy="268" r="9"/><circle class="hot" cx="1092" cy="180" r="9"/><circle class="hot" cx="1140" cy="180" r="9"/></g>
+    <!-- Kolorowe końcówki przewodów wpięte w konkretne otwory breadboardu -->
+    <g fill="#fff" stroke-width="4">
+      <circle cx="650" cy="356" r="7" stroke="#2e7d32"/><circle cx="650" cy="378" r="7" stroke="#1565c0"/>
+      <circle cx="650" cy="444" r="7" stroke="#d32f2f"/><circle cx="698" cy="444" r="7" stroke="#d32f2f"/>
+      <circle cx="650" cy="488" r="7" stroke="#242424"/><circle cx="698" cy="488" r="7" stroke="#242424"/>
+      <circle cx="1140" cy="378" r="7" stroke="#00838f"/><circle cx="1140" cy="400" r="7" stroke="#8e24aa"/>
+      <circle cx="1140" cy="422" r="7" stroke="#f39c12"/><circle cx="1140" cy="444" r="7" stroke="#242424"/>
+    </g>
+    <!-- etykiety otworów po bokach, bez wchodzenia na przewody -->
+    <g class="t tiny"><text x="628" y="360" text-anchor="end">a9</text><text x="628" y="382" text-anchor="end">a10</text><text x="628" y="448" text-anchor="end">a13</text><text x="628" y="492" text-anchor="end">a15</text>
+      <text x="1162" y="382">j10</text><text x="1162" y="404">j11</text><text x="1162" y="426">j12</text><text x="1162" y="448">j13</text><text x="698" y="466" text-anchor="middle">b13</text><text x="698" y="510" text-anchor="middle">b15</text></g>
+    <!-- Dwa osobne czerwone przewody zasilania są w dwóch osobnych otworach tego samego rzędu 13 -->
+    <g class="t tiny">
+      <path d="M650 444 H632 V420" fill="none" stroke="#d32f2f" stroke-width="2"/>
+      <rect class="chip" x="492" y="392" width="140" height="28" rx="6"/><text x="562" y="411" text-anchor="middle">a13 · LCD VCC</text>
+      <path d="M698 444 H730 V486" fill="none" stroke="#d32f2f" stroke-width="2"/>
+      <rect class="chip" x="730" y="486" width="128" height="28" rx="6"/><text x="794" y="505" text-anchor="middle">b13 · KY +</text>
+    </g>
+    <g class="t tiny">
+      <rect class="chipHot" x="1050" y="278" width="105" height="28" rx="6"/><text x="1102" y="297" text-anchor="middle">i5 · D9/H5</text>
+      <rect class="chipHot" x="1022" y="138" width="74" height="28" rx="6"/><text x="1059" y="157" text-anchor="middle">i1</text>
+      <rect class="chipHot" x="1128" y="138" width="100" height="28" rx="6"/><text x="1178" y="157" text-anchor="middle">j1 OUT</text>
+    </g>
+  </g>
+
+  <!-- Arduino Nano osadzone na D/H -->
+  <g id="nano" filter="url(#shadow)">
+    <rect class="nano" x="806" y="158" width="228" height="390" rx="10"/>
+    <rect x="887" y="120" width="66" height="66" rx="7" fill="url(#metal)" stroke="#687278" stroke-width="4"/><rect x="898" y="132" width="44" height="38" rx="4" fill="#c5cccf" stroke="#737d82" stroke-width="2"/><text class="t tiny" x="920" y="155" text-anchor="middle">USB</text>
+    <rect x="881" y="300" width="78" height="78" rx="5" fill="#22272a" stroke="#0b0d0e" stroke-width="3" transform="rotate(45 920 339)"/>
+    <rect x="887" y="418" width="66" height="32" fill="#394248" stroke="#161b1e" stroke-width="3"/><circle cx="865" cy="485" r="12" fill="#eceff1" stroke="#777" stroke-width="3"/>
+    <text class="white med" x="920" y="520" text-anchor="middle">ARDUINO NANO</text>
+    <!-- metalowe piny w kolumnach D/H -->
+    <g fill="#cfd5d8" stroke="#6f797e" stroke-width="2">
+      <rect x="787" y="195" width="16" height="14"/><rect x="1037" y="195" width="16" height="14"/><rect x="787" y="217" width="16" height="14"/><rect x="1037" y="217" width="16" height="14"/><rect x="787" y="239" width="16" height="14"/><rect x="1037" y="239" width="16" height="14"/><rect x="787" y="261" width="16" height="14"/><rect x="1037" y="261" width="16" height="14"/>
+      <rect x="787" y="283" width="16" height="14"/><rect x="1037" y="283" width="16" height="14"/><rect x="787" y="305" width="16" height="14"/><rect x="1037" y="305" width="16" height="14"/><rect x="787" y="327" width="16" height="14"/><rect x="1037" y="327" width="16" height="14"/><rect x="787" y="349" width="16" height="14"/><rect x="1037" y="349" width="16" height="14"/>
+      <rect x="787" y="371" width="16" height="14"/><rect x="1037" y="371" width="16" height="14"/><rect x="787" y="393" width="16" height="14"/><rect x="1037" y="393" width="16" height="14"/><rect x="787" y="415" width="16" height="14"/><rect x="1037" y="415" width="16" height="14"/><rect x="787" y="437" width="16" height="14"/><rect x="1037" y="437" width="16" height="14"/>
+      <rect x="787" y="459" width="16" height="14"/><rect x="1037" y="459" width="16" height="14"/><rect x="787" y="481" width="16" height="14"/><rect x="1037" y="481" width="16" height="14"/><rect x="787" y="503" width="16" height="14"/><rect x="1037" y="503" width="16" height="14"/>
+    </g>
+    <!-- nazwy używanych pinów -->
+    <g class="t tiny"><text x="815" y="360">A4</text><text x="815" y="382">A5</text><text x="815" y="448">5V</text><text x="815" y="492">GND</text><text x="1025" y="272" text-anchor="end">D9</text><text x="1025" y="382" text-anchor="end">D4</text><text x="1025" y="404" text-anchor="end">D3</text><text x="1025" y="426" text-anchor="end">D2</text><text x="1025" y="448" text-anchor="end">GND</text></g>
+  </g>
+
+  <!-- rezystor fizycznie w i5-i1 -->
+  <g id="resistor" filter="url(#shadow)">
+    <line class="wire out" x1="1092" y1="268" x2="1092" y2="245"/><line class="wire out" x1="1092" y1="203" x2="1092" y2="180"/>
+    <rect x="1075" y="203" width="34" height="42" rx="12" fill="#d8bd8b" stroke="#75522f" stroke-width="3"/>
+    <line x1="1077" y1="214" x2="1107" y2="214" stroke="#795548" stroke-width="5"/><line x1="1077" y1="224" x2="1107" y2="224" stroke="#111" stroke-width="5"/><line x1="1077" y1="234" x2="1107" y2="234" stroke="#d32f2f" stroke-width="5"/>
+    <rect class="chipHot" x="1118" y="207" width="118" height="32" rx="6"/><text class="t tiny" x="1177" y="228" text-anchor="middle">REZYSTOR 1 kΩ</text>
+  </g>
+
+  <!-- przewody LCD: najpierw wyraźnie schodzą pionowo z każdego pinu, dopiero potem idą do płytki -->
+  <path class="wire gnd" d="M418 475 V520 H520 V488 H650"/>
+  <path class="wire vcc" d="M450 475 V538 H542 V444 H650"/>
+  <path class="wire sda" d="M482 475 V556 H566 V356 H650"/>
+  <path class="wire scl" d="M514 475 V574 H592 V378 H650"/>
+  <g class="t tiny">
+    <rect class="chip" x="382" y="520" width="72" height="24" rx="6"/><text x="418" y="537" text-anchor="middle">GND</text>
+    <rect class="chip" x="414" y="542" width="72" height="24" rx="6"/><text x="450" y="559" text-anchor="middle">VCC</text>
+    <rect class="chip" x="446" y="564" width="72" height="24" rx="6"/><text x="482" y="581" text-anchor="middle">SDA</text>
+    <rect class="chip" x="478" y="586" width="72" height="24" rx="6"/><text x="514" y="603" text-anchor="middle">SCL</text>
+  </g>
+  <g class="t tiny"><rect class="panel" x="42" y="610" width="445" height="115" rx="10"/><text class="t med" x="62" y="638">LCD1602 I2C — cztery kable</text>
+    <circle cx="66" cy="665" r="6" fill="#242424"/><text x="82" y="670">GND → a15 → Nano GND</text><circle cx="66" cy="688" r="6" fill="#d32f2f"/><text x="82" y="693">VCC → a13 → Nano 5V</text><circle cx="270" cy="665" r="6" fill="#2e7d32"/><text x="286" y="670">SDA → a9 → Nano A4</text><circle cx="270" cy="688" r="6" fill="#1565c0"/><text x="286" y="693">SCL → a10 → Nano A5</text></g>
+
+  <!-- KY-040 -->
+  <g id="ky" filter="url(#shadow)" transform="translate(1320 250)">
+    <rect class="ky" x="0" y="0" width="400" height="365" rx="9"/>
+    <circle cx="35" cy="35" r="18" fill="#f0f0ee" stroke="#9a9a9a" stroke-width="5"/><circle cx="365" cy="35" r="18" fill="#f0f0ee" stroke="#9a9a9a" stroke-width="5"/>
+    <rect x="115" y="55" width="170" height="145" rx="18" fill="url(#metal)" stroke="#555d61" stroke-width="5"/><polygon points="118,82 140,60 260,60 282,82 282,174 260,196 140,196 118,174" fill="#b9bec1" stroke="#6c7377" stroke-width="4"/>
+    <rect x="176" y="18" width="48" height="150" rx="18" fill="url(#shaft)" stroke="#6b7377" stroke-width="4"/><circle cx="200" cy="50" r="25" fill="#a8afb2" stroke="#666e72" stroke-width="5"/>
+    <text class="white big" x="200" y="245" text-anchor="middle">KY-040</text><text class="white small" x="200" y="275" text-anchor="middle">ENCODER 360° + PRZYCISK</text>
+    <g transform="translate(45 300)"><rect class="gold" x="0" y="0" width="20" height="55"/><rect class="gold" x="70" y="0" width="20" height="55"/><rect class="gold" x="140" y="0" width="20" height="55"/><rect class="gold" x="210" y="0" width="20" height="55"/><rect class="gold" x="280" y="0" width="20" height="55"/>
+      <text class="white tiny" x="10" y="-10" text-anchor="middle">GND</text><text class="white tiny" x="80" y="-10" text-anchor="middle">+</text><text class="white tiny" x="150" y="-10" text-anchor="middle">SW</text><text class="white tiny" x="220" y="-10" text-anchor="middle">DT</text><text class="white tiny" x="290" y="-10" text-anchor="middle">CLK</text></g>
+  </g>
+
+  <!-- KY: pięć kabli poprowadzonych osobnymi dolnymi torami -->
+  <path class="wire gnd" d="M1375 605 V875 H1220 V444 H1140"/>
+  <path class="wire vcc" d="M1445 605 V910 H746 V444 H698"/>
+  <path class="wire sw" d="M1515 605 V945 H1200 V378 H1140"/>
+  <path class="wire dt" d="M1585 605 V980 H1240 V400 H1140"/>
+  <path class="wire clk" d="M1655 605 V1015 H1280 V422 H1140"/>
+  <g class="t tiny"><rect class="panel" x="1280" y="660" width="470" height="185" rx="10"/><text class="t med" x="1300" y="690">KY-040 — każdy pin osobno</text>
+    <circle cx="1305" cy="720" r="6" fill="#242424"/><text x="1322" y="725">GND → j13 → Nano GND</text><circle cx="1305" cy="748" r="6" fill="#d32f2f"/><text x="1322" y="753">+ → b13 → Nano 5V</text><circle cx="1305" cy="776" r="6" fill="#00838f"/><text x="1322" y="781">SW → j10 → Nano D4</text><circle cx="1305" cy="804" r="6" fill="#8e24aa"/><text x="1322" y="809">DT → j11 → Nano D3</text><circle cx="1305" cy="832" r="6" fill="#f39c12"/><text x="1322" y="837">CLK → j12 → Nano D2</text></g>
+
+  <!-- czerwony krokodylek: j1 wysoko nad KY -->
+  <path class="wire out" d="M1140 180 H1290 V120 H1480"/>
+  <g transform="translate(1480 98)"><path class="clipRed" d="M0 22 L110 0 L185 22 L110 44 Z"/><path d="M185 22 l62 -25 l-18 25 l18 25 z" fill="#a7adb0" stroke="#626a6e" stroke-width="3"/><text class="white small" x="95" y="28" text-anchor="middle">CZERWONY</text></g>
+  <rect class="chipHot" x="1260" y="132" width="205" height="34" rx="7"/><text class="t small" x="1362" y="155" text-anchor="middle">j1 → czerwony krokodylek</text>
+
+  <!-- czarny krokodylek: osobna dolna trasa, pod KY -->
+  <path class="wire gnd" d="M698 488 H590 V1050 H1480"/>
+  <g transform="translate(1480 1025)"><path class="clipBlack" d="M0 22 L110 0 L185 22 L110 44 Z"/><path d="M185 22 l62 -25 l-18 25 l18 25 z" fill="#a7adb0" stroke="#626a6e" stroke-width="3"/><text class="white small" x="95" y="28" text-anchor="middle">CZARNY</text></g>
+  <rect class="chip" x="900" y="1018" width="350" height="34" rx="7"/><text class="t small" x="1075" y="1041" text-anchor="middle">Nano GND (D15) → b15 → czarny krokodylek</text>
+
+  <!-- wyjaśnienie rezystora -->
+  <g><rect class="panel" x="40" y="735" width="520" height="180" rx="10"/><text class="t med" x="62" y="768">REZYSTOR I WYJŚCIE — CO DZIEJE SIĘ NA PŁYTCE</text>
+    <text class="t small mono" x="62" y="805">Nano D9 siedzi w H5.</text><text class="t small mono" x="62" y="834">F5–G5–H5–I5–J5 są połączone wewnątrz breadboardu.</text><text class="t small mono" x="62" y="863">1. nóżka rezystora: i5   ·   2. nóżka: i1</text><text class="t small mono" x="62" y="892">i1 i j1 są w tym samym rzędzie F–J → kabel czerwony w j1.</text></g>
+</svg>
