@@ -2,6 +2,23 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.1 — 2026-08-31
+
+### Application
+
+- Added a live countdown for required breaks between treatment parts in both the Today and Device views.
+- The countdown uses the locally persisted completion timestamp, so closing and reopening the application does not reset the break.
+- Sessions unlock automatically when the countdown reaches zero, without restarting or manually refreshing the application.
+- Completing the final treatment part removes the finished program from the active plan and keeps it in the local archive.
+
+### Languages
+
+- The countdown reuses the localized `remaining` label and locale-aware time formatting across all 30 supported application languages.
+
+### Reliability
+
+- Added a restart regression test covering a treatment completed at 19:00, a 20-minute break, automatic availability at 19:20 and final program archival.
+
 ## 10.3.0 — 2026-08-29
 
 ### Application

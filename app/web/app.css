@@ -168,6 +168,7 @@ button { color: inherit; }
 .session-row.is-done .session-avatar { background: var(--accent); color: white; }
 .session-person strong, .session-program strong { display: block; }
 .session-person span, .session-program span, .session-meta span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: clamp(13px, .92vw, 15px); }
+.session-program .schedule-countdown, .device-step-summary .schedule-countdown { color: #8b611b; font-variant-numeric: tabular-nums; font-weight: 750; }
 .session-program strong { font-size: 17px; letter-spacing: -.015em; }
 .session-meta strong { font-size: clamp(15px, 1.06vw, 17px); }
 .status-tag { display: inline-flex; width: fit-content; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 5px; background: #ebeeeb; color: #657069; font-size: clamp(12px, .85vw, 14px); font-weight: 750; text-transform: uppercase; }

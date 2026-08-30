@@ -228,6 +228,60 @@ function localizedOlderWarning(count) {
   return count ? uiFormat("dynOlderAppointmentsRemain", { count }) : "";
 }
 
+function scheduleCountdownValues(availableAt, now = Date.now()) {
+  const target = Date.parse(String(availableAt || ""));
+  if (!Number.isFinite(target)) return null;
+  const locale = window.ZapperI18n?.locale || LANGUAGE_LOCALES[preferredLanguage] || "en-US";
+  return {
+    target,
+    seconds: Math.max(0, Math.ceil((target - now) / 1000)),
+    time: new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date(target))
+  };
+}
+
+function scheduleWaitingText(plan, now = Date.now()) {
+  const reason = localizedBlockedReason(plan?.blocked_reason || uiText("notAvailableYet"));
+  const countdown = scheduleCountdownValues(plan?.available_at, now);
+  if (!countdown) return reason;
+  return `${reason} · ${countdown.time} · ${uiText("remaining")} ${formatClock(countdown.seconds)}`;
+}
+
+function scheduleWaitingMarkup(plan) {
+  const text = scheduleWaitingText(plan);
+  if (!plan?.available_at) return escapeHTML(text);
+  return `<span class="schedule-countdown" data-schedule-countdown data-available-at="${escapeAttribute(plan.available_at)}" data-blocked-reason="${escapeAttribute(plan.blocked_reason || uiText("notAvailableYet"))}">${escapeHTML(text)}</span>`;
+}
+
+async function tickScheduleCountdowns() {
+  if (!snapshot) return;
+  const now = Date.now();
+  let expired = false;
+  document.querySelectorAll("[data-schedule-countdown]").forEach(element => {
+    const values = scheduleCountdownValues(element.dataset.availableAt, now);
+    if (!values) return;
+    const plan = { available_at: element.dataset.availableAt, blocked_reason: element.dataset.blockedReason };
+    element.textContent = scheduleWaitingText(plan, now);
+    if (values.seconds <= 0) expired = true;
+  });
+  if (!expired || scheduleRefreshInFlight || now < nextScheduleRefreshAt) return;
+
+  scheduleRefreshInFlight = true;
+  nextScheduleRefreshAt = now + 1500;
+  try {
+    // Dostępność jest wyliczana z zapisanej godziny ukończenia przez backend.
+    // Ponowne pobranie usuwa licznik i odblokowuje przycisk dokładnie po przerwie.
+    snapshot = await window.apiLoad();
+    renderToday();
+    renderSchedule();
+    renderDeviceSessions();
+    renderDeviceStatus();
+  } catch (error) {
+    window.zapperReportError("tickScheduleCountdowns", error);
+  } finally {
+    scheduleRefreshInFlight = false;
+  }
+}
+
 const SUPPORTED_LANGUAGES = new Set([
   "en", "pl", "de", "fr", "es", "it", "pt", "nl", "sv", "no",
   "da", "fi", "cs", "sk", "hu", "ro", "tr", "id", "ms", "vi",
@@ -326,6 +380,9 @@ const DESTRUCTIVE_ARM_MS = 12000;
 let deviceStatus = { connected: false, ready: false, state: "disconnected", message: "Brak komunikacji" };
 let devicePorts = [];
 let devicePollTimer = null;
+let scheduleCountdownTimer = null;
+let scheduleRefreshInFlight = false;
+let nextScheduleRefreshAt = 0;
 
 document.addEventListener("DOMContentLoaded", initialize);
 
@@ -489,6 +546,11 @@ async function initialize() {
     await refreshFirmwareFlashInfo();
     await refreshDevicePorts(false);
     devicePollTimer = setInterval(pollDeviceStatus, 750);
+    scheduleCountdownTimer = setInterval(tickScheduleCountdowns, 1000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) tickScheduleCountdowns();
+    });
+    tickScheduleCountdowns();
     setTimeout(() => checkForAppUpdate(false), 1200);
   } catch (error) {
     showFatal(error);
@@ -1658,7 +1720,7 @@ function renderDeviceSessions() {
         ? escapeHTML(uiFormat("dynPausedDuration", { remaining: formatDuration(plan.remaining_seconds || duration) }))
         : plan.available
           ? (steps.length ? `${seriesProgress ? `${seriesProgress} · ` : ""}${escapeHTML(uiFormat("dynStepsDuration", { count: steps.length, duration: formatDuration(duration) }))}` : escapeHTML(uiText("noSteps")))
-          : escapeHTML(plan.blocked_reason ? localizedBlockedReason(plan.blocked_reason) : uiText("notAvailableYet"))}</div>
+          : scheduleWaitingMarkup(plan)}</div>
       <div class="device-session-actions"><button class="button primary" data-device-session="${escapeAttribute(plan.session_id)}" data-profile-name="${escapeAttribute(plan.profile_name)}" data-paused="${Boolean(plan.paused)}" data-out-of-order="${older > 0}" data-has-steps="${steps.length > 0}" data-available="${Boolean(plan.available)}" ${steps.length && plan.available ? "" : "disabled"}>${escapeHTML(startLabel)}</button>${plan.paused ? `<button class="button secondary" data-cancel-pause="${escapeAttribute(plan.session_id)}">${escapeHTML(uiText("startOver"))}</button>` : ""}<button class="button text-danger" data-dismiss-session-group="${escapeAttribute(plan.session_id)}">${escapeHTML(uiText("dismissTerm"))}</button></div>
     </article>`;
   }).join("");
@@ -1815,6 +1877,9 @@ function renderToday() {
       ? uiFormat("dynRemainingDevice", { remaining: formatDuration(plan.remaining_seconds || 0) })
       : !plan.available && plan.blocked_reason ? localizedBlockedReason(plan.blocked_reason)
       : ([orderWarning, plan.note || ""].filter(Boolean).join(" ") || uiText("noExtraNotes"));
+    const noteMarkup = !plan.paused && !plan.available
+      ? scheduleWaitingMarkup(plan)
+      : escapeHTML(note);
     const nextPart = Math.min(group.total, group.doneCount + 1);
     const buttonLabel = done ? uiText("completedMark") : plan.available
       ? (group.total > 1 ? uiFormat("dynRunPart", { part: nextPart, total: group.total }) : uiText("markCompleted"))
@@ -1827,7 +1892,7 @@ function renderToday() {
       </div>
       <div class="session-program">
         <strong>${escapeHTML(plan.program)}</strong>
-        <span>${escapeHTML(note)}</span>
+        <span>${noteMarkup}</span>
       </div>
       <div class="session-meta">
         <strong>${escapeHTML(plan.time || "-")} · ${escapeHTML(repeat)}</strong>

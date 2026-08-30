@@ -54,6 +54,72 @@ func TestApplicationPersistsConfigurationAndProgress(t *testing.T) {
 	}
 }
 
+func TestBreakCountdownSurvivesRestartAndFinalPartClosesProgram(t *testing.T) {
+	directory := t.TempDir()
+	finishedFirstAt := time.Date(2026, time.August, 31, 19, 0, 0, 0, time.Local)
+
+	application, err := NewApplication(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	application.now = func() time.Time { return finishedFirstAt }
+	config := Config{StartDate: "2026-08-31", Profiles: []Profile{{
+		ID: "profil_test", Name: "Test", Phases: []Phase{{
+			ID: "faza_test", Name: "Ostatni dzień", DurationDays: 1, Mode: "interval",
+			Program: "Program A", Time: "5 min", DeviceSteps: []DeviceStep{{FrequencyMilliHz: 30_000_000, DurationSeconds: 300}},
+			Scheduling: SessionScheduling{ProgramID: "program_a", Repetitions: 2, BreakBetweenMinutes: 20},
+		}},
+	}}}
+	snapshot, err := application.SaveConfig(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first := planWithRepeat(snapshot.Today, 1)
+	if first.SessionID == "" {
+		t.Fatalf("brak pierwszej części sesji: %#v", snapshot.Today)
+	}
+	if _, err := application.SetSessionDone(first.SessionID, true); err != nil {
+		t.Fatal(err)
+	}
+
+	// Symulacja zamknięcia aplikacji i ponownego uruchomienia po 10 minutach.
+	restarted, err := NewApplication(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restarted.now = func() time.Time {
+		return time.Date(2026, time.August, 31, 19, 10, 0, 0, time.Local)
+	}
+	snapshot = restarted.Snapshot()
+	second := planWithRepeat(snapshot.Today, 2)
+	if second.Available {
+		t.Fatalf("druga część nie może być dostępna przed końcem zapisanej przerwy: %#v", second)
+	}
+	wantAvailableAt := time.Date(2026, time.August, 31, 19, 20, 0, 0, time.Local).Format(time.RFC3339)
+	if second.AvailableAt != wantAvailableAt {
+		t.Fatalf("odliczanie po restarcie kończy się o %q, oczekiwano %q", second.AvailableAt, wantAvailableAt)
+	}
+	if completion := snapshot.Progress.Completions[first.SessionID]; completion.CompletedAt != finishedFirstAt.Format(time.RFC3339) {
+		t.Fatalf("godzina pierwszego zabiegu nie przetrwała restartu: %#v", completion)
+	}
+
+	restarted.now = func() time.Time {
+		return time.Date(2026, time.August, 31, 19, 20, 0, 0, time.Local)
+	}
+	snapshot = restarted.Snapshot()
+	second = planWithRepeat(snapshot.Today, 2)
+	if !second.Available {
+		t.Fatalf("druga część powinna odblokować się dokładnie o 19:20: %#v", second)
+	}
+	if _, err := restarted.SetSessionDone(second.SessionID, true); err != nil {
+		t.Fatal(err)
+	}
+	snapshot = restarted.Snapshot()
+	if len(snapshot.Config.Profiles) != 0 || len(snapshot.Archive) != 1 {
+		t.Fatalf("po ostatniej części zakończony program powinien zniknąć z aktywnego planu i trafić do archiwum: %#v", snapshot)
+	}
+}
+
 func TestLegacyRootDataMigratesToDataDirectory(t *testing.T) {
 	directory := t.TempDir()
 	legacyProfiles := `{"start_date":"2026-08-03","profiles":[]}`
