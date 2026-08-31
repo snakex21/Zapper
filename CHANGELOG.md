@@ -2,6 +2,14 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.6 — 2026-08-31
+
+### Startup
+
+- Removed the visible flash between the native startup screen and the application interface.
+- WebView documents receive the dark startup background before their first frame is painted.
+- The embedded critical loading styles and logo now exactly match the preceding startup screen, without waiting for an image or external stylesheet.
+
 ## 10.3.5 — 2026-08-31
 
 ### Distribution

@@ -103,7 +103,7 @@ def normalize_ws(value):
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
 known_sources = {normalize_ws(pair[0]) for pair in text.values()} | {normalize_ws(pair[1]) for pair in text.values()}
-technical = {"Z", "Zapper", "Hz", "kHz", "MHz", "+", "×", "—", ".", "00:00", "5.1.0", "v10.3.5"}
+technical = {"Z", "Zapper", "Hz", "kHz", "MHz", "+", "×", "—", ".", "00:00", "5.1.0", "v10.3.6"}
 
 class IndexParser(HTMLParser):
     def __init__(self):

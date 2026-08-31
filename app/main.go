@@ -88,6 +88,11 @@ func main() {
 	}
 	defer window.Destroy()
 
+	// WebView2 domyślnie maluje nowy dokument na biało, zanim przetworzy jego
+	// pierwszy arkusz stylów. Ustawienie tła już przy tworzeniu dokumentu usuwa
+	// jasną klatkę pomiędzy ekranem startowym a właściwym interfejsem.
+	window.Init(`document.documentElement.style.backgroundColor="#17231f";document.documentElement.style.colorScheme="light";`)
+
 	// Jedno natywne okno przez cały start. Zamiast chować/pokazywać HWND
 	// (co na Windows potrafi zepchnąć aplikację niżej w stosie okien), WebView
 	// od razu pokazuje lekki ekran startowy o tych samych kolorach co aplikacja.

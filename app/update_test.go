@@ -72,7 +72,7 @@ func TestParseSHA256File(t *testing.T) {
 
 func TestFindPortablePayloadUsesRequiredStructureWithoutMarkerFile(t *testing.T) {
 	extractRoot := t.TempDir()
-	payload := filepath.Join(extractRoot, "Zapper-v10.3.5-Windows-x64")
+	payload := filepath.Join(extractRoot, "Zapper-v10.3.6-Windows-x64")
 	for _, directory := range []string{
 		filepath.Join(payload, "locales"),
 		filepath.Join(payload, "firmware", "localized"),

@@ -6,12 +6,18 @@
   <meta name="color-scheme" content="light">
   <link rel="icon" type="image/png" href="/assets/zapper_icon.png">
   <title>Zapper — plan i dziennik</title>
-  <style>html,body{margin:0;background:#f5f6f2;color:#16211d}.loading-screen{background:#17231f;color:#fff}</style>
+  <style>
+    html,body{width:100%;height:100%;margin:0;background:#17231f;color:#fff;font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;overflow:hidden}
+    .loading-screen{position:fixed;inset:0;z-index:50;display:grid;place-content:center;justify-items:center;gap:16px;background:#17231f;color:#fff}
+    .loading-screen p{margin:0;color:#afbeb8;font-size:15px}
+    .loading-mark{display:grid;place-items:center;width:54px;height:54px;border-radius:11px;background:#20815f;color:#fff;font-size:24px;font-weight:800}
+    .app-shell{visibility:hidden}
+  </style>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
   <div class="loading-screen" id="loading-screen">
-    <img class="loading-mark" src="/assets/zapper_icon.png" alt="">
+    <div class="loading-mark" aria-hidden="true">Z</div>
     <p>Otwieranie dziennika…</p>
   </div>
 
@@ -74,7 +80,7 @@
           <span>Język</span>
           <select id="language-select" aria-label="Język aplikacji"></select>
         </label>
-        <span id="app-version" role="button" tabindex="0">v10.3.5</span>
+        <span id="app-version" role="button" tabindex="0">v10.3.6</span>
       </div>
     </aside>
 
