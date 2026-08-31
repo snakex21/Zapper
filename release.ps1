@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Set-Location -LiteralPath $PSScriptRoot
 
 $appSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot "app\app.go") -Raw
-$match = [regex]::Match($appSource, 'const\s+appVersion\s*=\s*"([^"]+)"')
+$match = [regex]::Match($appSource, '(?:const|var)\s+appVersion\s*=\s*"([^"]+)"')
 if (-not $match.Success) {
     throw "Nie udało się odczytać wersji aplikacji z app/app.go."
 }

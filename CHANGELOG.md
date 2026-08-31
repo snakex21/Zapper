@@ -2,6 +2,14 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.4.0 — 2026-08-31
+
+### Updates
+
+- Fixed releases incorrectly identifying themselves as development builds and hiding the download/install button.
+- Automatic updates on Windows no longer depend on a hidden linker build-flavor flag; every Zapper build uses portable storage beside the executable.
+- Added a regression test covering release asset selection and an integration test covering ZIP download, SHA-256 verification, extraction and portable payload discovery.
+
 ## 10.3.9 — 2026-08-31
 
 ### Startup

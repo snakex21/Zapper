@@ -1,8 +1,17 @@
 package main
 
 import (
+	"archive/zip"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -67,6 +76,112 @@ func TestParseSHA256File(t *testing.T) {
 	}
 	if got != hash {
 		t.Fatalf("got %q, want %q", got, hash)
+	}
+}
+
+func TestReleaseAssetsEnableAutomaticInstallWithoutBuildFlavor(t *testing.T) {
+	release := githubRelease{TagName: "v10.4.0", HTMLURL: "https://example.test/release"}
+	release.Assets = append(release.Assets,
+		githubReleaseAsset{Name: "Zapper-v10.4.0-Windows-x64.zip", BrowserDownloadURL: "https://example.test/Zapper.zip"},
+		githubReleaseAsset{Name: "Zapper-v10.4.0-Windows-x64.zip.sha256", BrowserDownloadURL: "https://example.test/Zapper.zip.sha256"},
+	)
+
+	info, err := appUpdateInfoFromRelease(release, "10.3.5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !info.Available {
+		t.Fatal("wersja 10.4.0 powinna być dostępna dla 10.3.5")
+	}
+	if info.InstallSupported != (runtime.GOOS == "windows") {
+		t.Fatal("kompletne wydanie Windows musi udostępniać automatyczną instalację bez dodatkowej flagi buildu")
+	}
+}
+
+func TestUpdatePackageDownloadChecksumAndPayloadDiscovery(t *testing.T) {
+	packageName := "Zapper-v10.4.0-Windows-x64.zip"
+	serverRoot := t.TempDir()
+	zipPath := filepath.Join(serverRoot, packageName)
+	createTestUpdateZIP(t, zipPath)
+	zipBytes, err := os.ReadFile(zipPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hashBytes := sha256.Sum256(zipBytes)
+	hash := hex.EncodeToString(hashBytes[:])
+
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/" + packageName:
+			response.Header().Set("Content-Type", "application/zip")
+			_, _ = response.Write(zipBytes)
+		case "/" + packageName + ".sha256":
+			_, _ = fmt.Fprintf(response, "%s  %s\n", hash, packageName)
+		default:
+			http.NotFound(response, request)
+		}
+	}))
+	defer server.Close()
+
+	downloadRoot := t.TempDir()
+	downloadedZIP := filepath.Join(downloadRoot, packageName)
+	if err := downloadToFile(context.Background(), server.URL+"/"+packageName, downloadedZIP); err != nil {
+		t.Fatalf("pobieranie ZIP: %v", err)
+	}
+	shaText, err := downloadSmallText(context.Background(), server.URL+"/"+packageName+".sha256", 16*1024)
+	if err != nil {
+		t.Fatalf("pobieranie SHA-256: %v", err)
+	}
+	expectedHash, err := parseSHA256File(shaText, packageName)
+	if err != nil {
+		t.Fatalf("odczyt SHA-256: %v", err)
+	}
+	actualHash, err := fileSHA256(downloadedZIP)
+	if err != nil {
+		t.Fatalf("obliczanie SHA-256: %v", err)
+	}
+	if !strings.EqualFold(expectedHash, actualHash) {
+		t.Fatalf("SHA-256 pobranej paczki = %s, oczekiwano %s", actualHash, expectedHash)
+	}
+
+	extractRoot := filepath.Join(downloadRoot, "payload")
+	if err := extractZip(downloadedZIP, extractRoot); err != nil {
+		t.Fatalf("rozpakowanie ZIP: %v", err)
+	}
+	payloadRoot, err := findPortablePayload(extractRoot)
+	if err != nil {
+		t.Fatalf("wykrycie paczki portable: %v", err)
+	}
+	if !fileExists(filepath.Join(payloadRoot, "Zapper.exe")) {
+		t.Fatal("wykryta paczka nie zawiera Zapper.exe")
+	}
+}
+
+func createTestUpdateZIP(t *testing.T, destination string) {
+	t.Helper()
+	file, err := os.Create(destination)
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive := zip.NewWriter(file)
+	for _, name := range []string{
+		"Zapper-v10.4.0-Windows-x64/Zapper.exe",
+		"Zapper-v10.4.0-Windows-x64/locales/ui.pl.json",
+		"Zapper-v10.4.0-Windows-x64/firmware/localized/pl/zapper_v5_pl.ino",
+	} {
+		writer, createErr := archive.Create(name)
+		if createErr != nil {
+			t.Fatal(createErr)
+		}
+		if _, writeErr := writer.Write([]byte("test")); writeErr != nil {
+			t.Fatal(writeErr)
+		}
+	}
+	if err := archive.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
 	}
 }
 

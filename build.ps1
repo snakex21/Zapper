@@ -48,7 +48,7 @@ New-Item -ItemType Directory -Path $portableFirmware -Force | Out-Null
 New-Item -ItemType Directory -Path $portableLocales -Force | Out-Null
 
 Write-Host "Budowanie build\Zapper\Zapper.exe..."
-go build -trimpath -ldflags="-s -w -H=windowsgui -X zapper/app.appBuildFlavor=portable" -o (Join-Path $portableRoot "Zapper.exe") ./app
+go build -trimpath -ldflags="-s -w -H=windowsgui -X main.appBuildFlavor=portable" -o (Join-Path $portableRoot "Zapper.exe") ./app
 
 # Wersja portable/release ma być czysta. Nigdy nie kopiujemy do niej lokalnych
 # profili, historii, logów, portu COM ani innych prywatnych danych z katalogu data.

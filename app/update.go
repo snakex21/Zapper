@@ -24,7 +24,9 @@ const (
 	updateGitHubRepo  = "Zapper"
 )
 
-// Nadpisywane przez -ldflags wyłącznie podczas budowania wydania portable.
+// Używane wyłącznie do sprzątania starych plików w paczce portable.
+// Aktualizator nie może zależeć od tej flagi. Pakiet main nadpisujemy przez
+// -X main.appBuildFlavor=portable.
 var appBuildFlavor = "development"
 
 type AppUpdateInfo struct {
@@ -44,17 +46,19 @@ type AppUpdateInstallResult struct {
 }
 
 type githubRelease struct {
-	TagName     string `json:"tag_name"`
-	HTMLURL     string `json:"html_url"`
-	Body        string `json:"body"`
-	PublishedAt string `json:"published_at"`
-	Assets      []struct {
-		Name               string `json:"name"`
-		BrowserDownloadURL string `json:"browser_download_url"`
-	} `json:"assets"`
+	TagName     string               `json:"tag_name"`
+	HTMLURL     string               `json:"html_url"`
+	Body        string               `json:"body"`
+	PublishedAt string               `json:"published_at"`
+	Assets      []githubReleaseAsset `json:"assets"`
 }
 
-func checkAppUpdate(appDirectory string) (AppUpdateInfo, error) {
+type githubReleaseAsset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+
+func checkAppUpdate(_ string) (AppUpdateInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
 
@@ -62,11 +66,15 @@ func checkAppUpdate(appDirectory string) (AppUpdateInfo, error) {
 	if err != nil {
 		return AppUpdateInfo{}, err
 	}
+	return appUpdateInfoFromRelease(release, appVersion)
+}
+
+func appUpdateInfoFromRelease(release githubRelease, currentVersion string) (AppUpdateInfo, error) {
 	latest := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(release.TagName), "v"))
 	if latest == "" {
 		return AppUpdateInfo{}, errors.New("GitHub release nie ma poprawnego tagu wersji")
 	}
-	newer, err := versionNewer(latest, appVersion)
+	newer, err := versionNewer(latest, currentVersion)
 	if err != nil {
 		return AppUpdateInfo{}, fmt.Errorf("nieprawidłowa wersja release %q: %w", release.TagName, err)
 	}
@@ -77,10 +85,10 @@ func checkAppUpdate(appDirectory string) (AppUpdateInfo, error) {
 	assetsReady := zipURL != "" && shaURL != ""
 
 	return AppUpdateInfo{
-		CurrentVersion:   appVersion,
+		CurrentVersion:   currentVersion,
 		LatestVersion:    latest,
 		Available:        newer,
-		InstallSupported: newer && runtime.GOOS == "windows" && isPortableInstall(appDirectory) && assetsReady,
+		InstallSupported: newer && runtime.GOOS == "windows" && assetsReady,
 		ReleaseURL:       release.HTMLURL,
 		PublishedAt:      release.PublishedAt,
 		Notes:            release.Body,
@@ -92,10 +100,6 @@ func installLatestAppUpdate(appDirectory string) (AppUpdateInstallResult, error)
 	if runtime.GOOS != "windows" {
 		return AppUpdateInstallResult{}, errors.New("automatyczna instalacja aktualizacji jest obsługiwana tylko w Windows")
 	}
-	if !isPortableInstall(appDirectory) {
-		return AppUpdateInstallResult{}, errors.New("automatyczna instalacja działa tylko dla wersji portable")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	release, err := fetchLatestGitHubRelease(ctx)
@@ -207,10 +211,6 @@ func releaseAssetURLs(release githubRelease, zipName, shaName string) (string, s
 		}
 	}
 	return zipURL, shaURL
-}
-
-func isPortableInstall(appDirectory string) bool {
-	return appBuildFlavor == "portable"
 }
 
 func versionNewer(candidate, current string) (bool, error) {
