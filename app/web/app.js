@@ -541,6 +541,7 @@ async function initialize() {
     if (requestedView && VIEW_TITLES[requestedView]) openView(requestedView);
     syncTherapyView();
     document.getElementById("app-version").textContent = `v${snapshot.meta.version}`;
+    document.documentElement.style.removeProperty("background-color");
     document.getElementById("app-shell").setAttribute("aria-hidden", "false");
     document.getElementById("loading-screen").classList.add("is-hidden");
     await refreshFirmwareFlashInfo();

@@ -2,6 +2,14 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.7 — 2026-08-31
+
+### Startup
+
+- Fixed the application interface remaining invisible after the loading screen introduced in 10.3.6.
+- Restored the normal light application background immediately after the dark startup screen finishes.
+- Added a regression test ensuring the startup-only visibility rule is removed when initialization finishes.
+
 ## 10.3.6 — 2026-08-31
 
 ### Startup

@@ -11,7 +11,7 @@
     .loading-screen{position:fixed;inset:0;z-index:50;display:grid;place-content:center;justify-items:center;gap:16px;background:#17231f;color:#fff}
     .loading-screen p{margin:0;color:#afbeb8;font-size:15px}
     .loading-mark{display:grid;place-items:center;width:54px;height:54px;border-radius:11px;background:#20815f;color:#fff;font-size:24px;font-weight:800}
-    .app-shell{visibility:hidden}
+    .app-shell[aria-hidden="true"]{visibility:hidden}
   </style>
   <link rel="stylesheet" href="app.css">
 </head>
@@ -80,7 +80,7 @@
           <span>Język</span>
           <select id="language-select" aria-label="Język aplikacji"></select>
         </label>
-        <span id="app-version" role="button" tabindex="0">v10.3.6</span>
+        <span id="app-version" role="button" tabindex="0">v10.3.7</span>
       </div>
     </aside>
 

@@ -20,7 +20,7 @@
 
 * { box-sizing: border-box; }
 
-html, body { height: 100%; margin: 0; overflow: hidden; }
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--surface); color: var(--ink); }
 
 button, input, textarea, select { font: inherit; }
 button { color: inherit; }
