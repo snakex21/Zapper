@@ -2,11 +2,20 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.9 — 2026-08-31
+
+### Startup
+
+- Fixed the white WebView2 presentation buffer that was still visible briefly in 10.3.8.
+- The complete in-memory preview is now displayed as a native child overlay during WebView2's first visible frames, so the first visible frame contains the actual Zapper interface instead of a blank surface.
+- The overlay remains in place until WebView2 has had time to present its real surface, then it is removed without changing the window position or size.
+- Verified the exact first visible frame from the built executable and confirmed that it contains the fully rendered application interface.
+
 ## 10.3.8 — 2026-08-31
 
 ### Startup
 
-- Eliminated the remaining one-frame startup flash by creating the native Windows window hidden.
+- Created the native Windows window hidden during WebView initialization.
 - The WebView now loads and lays out the complete interface off-screen, then reveals the window only once when the application reports that it is ready.
 - Before the native window is shown, WebView2 renders a complete in-memory `CapturePreview`; the preview completion callback is the signal that the first visible surface is ready.
 - Removed the intermediate `SetHtml` document and the second visible WebView navigation.

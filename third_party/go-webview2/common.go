@@ -74,7 +74,7 @@ type WebView interface {
 
 	// CapturePreview renders the current WebView into an in-memory image and
 	// invokes callback after the rendered surface is ready.
-	CapturePreview(callback func(error)) error
+	CapturePreview(callback func([]byte, error)) error
 
 	// Bind binds a callback function so that it will appear under the given name
 	// as a global JavaScript function. Internally it uses webview_init().

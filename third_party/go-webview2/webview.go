@@ -42,7 +42,7 @@ type browser interface {
 	NavigateToString(htmlContent string)
 	Init(script string)
 	Eval(script string)
-	CapturePreview(callback func(error)) error
+	CapturePreview(callback func([]byte, error)) error
 	NotifyParentWindowPositionChanged() error
 	Focus()
 }
@@ -446,7 +446,7 @@ func (w *webview) Eval(js string) {
 	w.browser.Eval(js)
 }
 
-func (w *webview) CapturePreview(callback func(error)) error {
+func (w *webview) CapturePreview(callback func([]byte, error)) error {
 	return w.browser.CapturePreview(callback)
 }
 

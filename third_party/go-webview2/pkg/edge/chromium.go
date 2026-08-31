@@ -29,7 +29,7 @@ type Chromium struct {
 	acceleratorKeyPressed   *ICoreWebView2AcceleratorKeyPressedEventHandler
 	navigationCompleted     *ICoreWebView2NavigationCompletedEventHandler
 	capturePreviewCompleted *iCoreWebView2CapturePreviewCompletedHandler
-	capturePreviewCallback  func(error)
+	capturePreviewCallback  func([]byte, error)
 	capturePreviewStream    uintptr
 
 	environment *ICoreWebView2Environment
@@ -153,17 +153,18 @@ func (e *Chromium) Eval(script string) {
 	)
 }
 
-func (e *Chromium) CapturePreview(callback func(error)) error {
+func (e *Chromium) CapturePreview(callback func([]byte, error)) error {
 	if e.webview == nil {
 		return fmt.Errorf("webview is not initialized")
 	}
-	stream, _ := w32.SHCreateMemStream(nil)
-	if stream == 0 {
+	var stream uintptr
+	result, _, _ := w32.Ole32CreateStreamOnHGlobal.Call(0, 1, uintptr(unsafe.Pointer(&stream)))
+	if int32(result) < 0 || stream == 0 {
 		return fmt.Errorf("could not create preview memory stream")
 	}
 	e.capturePreviewCallback = callback
 	e.capturePreviewStream = stream
-	result, _, _ := e.webview.vtbl.CapturePreview.Call(
+	result, _, _ = e.webview.vtbl.CapturePreview.Call(
 		uintptr(unsafe.Pointer(e.webview)),
 		0, // COREWEBVIEW2_CAPTURE_PREVIEW_IMAGE_FORMAT_PNG
 		stream,
@@ -180,15 +181,42 @@ func (e *Chromium) CapturePreview(callback func(error)) error {
 func (e *Chromium) CapturePreviewCompleted(errorCode uintptr) uintptr {
 	callback := e.capturePreviewCallback
 	e.capturePreviewCallback = nil
+	preview := e.capturePreviewBytes()
 	e.releaseCapturePreviewStream()
 	if callback != nil {
 		if int32(errorCode) < 0 {
-			callback(fmt.Errorf("CapturePreview completed with HRESULT 0x%08X", uint32(errorCode)))
+			callback(nil, fmt.Errorf("CapturePreview completed with HRESULT 0x%08X", uint32(errorCode)))
+		} else if len(preview) == 0 {
+			callback(nil, fmt.Errorf("CapturePreview returned an empty image"))
 		} else {
-			callback(nil)
+			callback(preview, nil)
 		}
 	}
 	return 0
+}
+
+func (e *Chromium) capturePreviewBytes() []byte {
+	if e.capturePreviewStream == 0 {
+		return nil
+	}
+	var globalMemory uintptr
+	result, _, _ := w32.Ole32GetHGlobalFromStream.Call(e.capturePreviewStream, uintptr(unsafe.Pointer(&globalMemory)))
+	if int32(result) < 0 || globalMemory == 0 {
+		return nil
+	}
+	size, _, _ := w32.Kernel32GlobalSize.Call(globalMemory)
+	if size == 0 {
+		return nil
+	}
+	pointer, _, _ := w32.Kernel32GlobalLock.Call(globalMemory)
+	if pointer == 0 {
+		return nil
+	}
+	defer w32.Kernel32GlobalUnlock.Call(globalMemory)
+	preview := make([]byte, int(size))
+	source := (*[1 << 30]byte)(unsafe.Pointer(pointer))[:int(size):int(size)]
+	copy(preview, source)
+	return preview
 }
 
 func (e *Chromium) releaseCapturePreviewStream() {

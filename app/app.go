@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const appVersion = "10.3.8"
+const appVersion = "10.3.9"
 
 // maxManualRunRecords ogranicza rozrost dziennika trybu ręcznego.
 const maxManualRunRecords = 2000

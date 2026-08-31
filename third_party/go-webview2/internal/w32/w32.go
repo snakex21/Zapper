@@ -9,11 +9,16 @@ import (
 )
 
 var (
-	ole32               = windows.NewLazySystemDLL("ole32")
-	Ole32CoInitializeEx = ole32.NewProc("CoInitializeEx")
+	ole32                      = windows.NewLazySystemDLL("ole32")
+	Ole32CoInitializeEx        = ole32.NewProc("CoInitializeEx")
+	Ole32CreateStreamOnHGlobal = ole32.NewProc("CreateStreamOnHGlobal")
+	Ole32GetHGlobalFromStream  = ole32.NewProc("GetHGlobalFromStream")
 
 	kernel32                   = windows.NewLazySystemDLL("kernel32")
 	Kernel32GetCurrentThreadID = kernel32.NewProc("GetCurrentThreadId")
+	Kernel32GlobalLock         = kernel32.NewProc("GlobalLock")
+	Kernel32GlobalUnlock       = kernel32.NewProc("GlobalUnlock")
+	Kernel32GlobalSize         = kernel32.NewProc("GlobalSize")
 
 	shlwapi                  = windows.NewLazySystemDLL("shlwapi")
 	shlwapiSHCreateMemStream = shlwapi.NewProc("SHCreateMemStream")

@@ -96,21 +96,43 @@ func main() {
 	setNativeWindowIcon(window.Window())
 	windowStateStop := make(chan struct{})
 	var showWindowOnce sync.Once
+	var removeOverlayOnce sync.Once
+	var startupOverlay *nativeStartupOverlay
+	removeStartupOverlay := func() {
+		removeOverlayOnce.Do(func() {
+			destroyNativeStartupOverlay(startupOverlay)
+			startupOverlay = nil
+		})
+	}
 	showApplicationWindow := func() {
 		showWindowOnce.Do(func() {
 			window.Dispatch(func() {
-				reveal := func() {
-					showNativeApplicationWindow(window.Window(), savedWindow.Maximized)
+				prepareNativeApplicationWindow(window.Window(), savedWindow.Maximized)
+				reveal := func(preview []byte) {
+					if len(preview) > 0 {
+						var overlayErr error
+						startupOverlay, overlayErr = createNativeStartupOverlay(window.Window(), preview)
+						if overlayErr != nil {
+							errorSink.appendToFile("nie utworzono nakładki pierwszej klatki WebView2: " + overlayErr.Error())
+						}
+					}
+					revealNativeApplicationWindow(window.Window())
 					go rememberWindowState(appDirectory, window.Window(), windowStateStop)
+					if startupOverlay != nil {
+						window.Eval(`requestAnimationFrame(() => requestAnimationFrame(() => window.apiApplicationPresented()))`)
+						time.AfterFunc(750*time.Millisecond, func() {
+							window.Dispatch(removeStartupOverlay)
+						})
+					}
 				}
-				if captureErr := window.CapturePreview(func(previewErr error) {
+				if captureErr := window.CapturePreview(func(preview []byte, previewErr error) {
 					if previewErr != nil {
 						errorSink.appendToFile("błąd przygotowania pierwszej klatki WebView2: " + previewErr.Error())
 					}
-					window.Dispatch(reveal)
+					window.Dispatch(func() { reveal(preview) })
 				}); captureErr != nil {
 					errorSink.appendToFile("nie rozpoczęto przygotowania pierwszej klatki WebView2: " + captureErr.Error())
-					reveal()
+					reveal(nil)
 				}
 			})
 		})
@@ -121,6 +143,11 @@ func main() {
 	})
 	mustBind(window, "apiApplicationReady", func() {
 		showApplicationWindow()
+	})
+	mustBind(window, "apiApplicationPresented", func() {
+		time.AfterFunc(180*time.Millisecond, func() {
+			window.Dispatch(removeStartupOverlay)
+		})
 	})
 	mustBind(window, "apiLoadSettings", func() (AppSettings, error) {
 		return loadAppSettings(appDirectory)
@@ -275,6 +302,7 @@ func main() {
 	defer startupFallback.Stop()
 	window.Navigate(address)
 	window.Run()
+	removeStartupOverlay()
 	close(windowStateStop)
 }
 
