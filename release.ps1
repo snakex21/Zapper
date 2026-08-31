@@ -34,11 +34,20 @@ if (-not (Test-Path -LiteralPath (Join-Path $portableRoot "Zapper.exe"))) {
 if (-not (Test-Path -LiteralPath (Join-Path $portableRoot "LICENSE"))) {
     throw "Brak LICENSE w paczce portable."
 }
-if (-not (Test-Path -LiteralPath (Join-Path $portableRoot "README_PORTABLE.txt"))) {
-    throw "Brak README_PORTABLE.txt w paczce portable."
-}
 if (-not (Test-Path -LiteralPath (Join-Path $portableRoot ".zapper-portable"))) {
     throw "Brak znacznika wersji portable wymaganego przez automatyczne aktualizacje."
+}
+$portableLocalizedFirmware = Join-Path $portableRoot "firmware\localized"
+if (-not (Test-Path -LiteralPath $portableLocalizedFirmware)) {
+    throw "Brak wariantow firmware w paczce portable."
+}
+if ((Get-ChildItem -LiteralPath $portableLocalizedFirmware -Directory | Measure-Object).Count -ne 30) {
+    throw "Paczka portable nie zawiera dokladnie 30 wariantow firmware."
+}
+foreach ($developerOnlyPath in @("firmware\archive", "firmware\zapper_v5", "firmware\languages.json", "firmware\LANGUAGES.md")) {
+    if (Test-Path -LiteralPath (Join-Path $portableRoot $developerOnlyPath)) {
+        throw "Paczka portable zawiera zbedny element deweloperski: $developerOnlyPath"
+    }
 }
 if ((Get-ChildItem -LiteralPath $dataRoot -Force | Measure-Object).Count -ne 0) {
     throw "Katalog data w paczce release nie jest pusty. Release przerwany."

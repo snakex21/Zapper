@@ -67,24 +67,12 @@ Get-ChildItem -LiteralPath $sourceLocales -File | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination $portableLocales -Force
 }
 
-$sourceFirmware = Join-Path $PSScriptRoot "firmware"
-if (Test-Path -LiteralPath $sourceFirmware) {
-    Write-Host "Kopiowanie firmware v5 oraz archiwum v4..."
-    Get-ChildItem -LiteralPath $sourceFirmware -Force | ForEach-Object {
-        Copy-Item -LiteralPath $_.FullName -Destination $portableFirmware -Recurse -Force
-    }
-}
-
 $generatedFirmware = Join-Path $PSScriptRoot "build\generated\firmware"
 if (Test-Path -LiteralPath $generatedFirmware) {
     Write-Host "Dolaczanie 30 wariantow jezykowych firmware do portable..."
     Copy-Item -LiteralPath $generatedFirmware -Destination (Join-Path $portableFirmware "localized") -Recurse -Force
 }
 
-# README portable trzymamy jako osobny plik UTF-8 i kopiujemy bajt w bajt.
-# Windows PowerShell 5.1 potrafi błędnie zinterpretować polskie znaki zapisane
-# bezpośrednio w samym skrypcie .ps1, dlatego nie generujemy tego tekstu tutaj.
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "README_PORTABLE.txt") -Destination (Join-Path $portableRoot "README_PORTABLE.txt") -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "LICENSE") -Destination (Join-Path $portableRoot "LICENSE") -Force
 [IO.File]::WriteAllText((Join-Path $portableRoot ".zapper-portable"), "Zapper portable build`r`n", (New-Object System.Text.UTF8Encoding($false)))
 

@@ -2,6 +2,15 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.3 — 2026-08-31
+
+### Distribution
+
+- Removed the unnecessary Polish-only `README_PORTABLE.txt` from portable packages.
+- Removed the developer-only archived v4 source and duplicate base v5 source from portable packages.
+- Portable packages now contain only the 30 firmware variants actually used by the in-app firmware flasher under `firmware/localized`.
+- Firmware compilation staging now stays inside the portable application folder under `data/firmware-build`.
+
 ## 10.3.2 — 2026-08-31
 
 ### Reliability

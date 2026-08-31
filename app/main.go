@@ -324,7 +324,11 @@ func startAssetServer(appDirectory string) (*http.Server, string, error) {
 	mux.HandleFunc("/locale/ui/", serveLocale("ui"))
 	mux.HandleFunc("/locale/guide/", serveLocale("guide"))
 	mux.HandleFunc("/firmware/current", func(response http.ResponseWriter, request *http.Request) {
-		firmwarePath := filepath.Join(appDirectory, "firmware", "zapper_v5", "zapper_v5.ino")
+		firmwarePath := locateFirmwareSketch(appDirectory, "pl")
+		if firmwarePath == "" {
+			http.Error(response, "nie znaleziono aktualnego firmware", http.StatusNotFound)
+			return
+		}
 		data, readErr := os.ReadFile(firmwarePath)
 		if readErr != nil {
 			http.Error(response, "nie znaleziono aktualnego firmware: "+readErr.Error(), http.StatusNotFound)

@@ -38,13 +38,13 @@ type FirmwareFlashRequest struct {
 }
 
 type FirmwareFlashResult struct {
-	OK             bool   `json:"ok"`
-	Version        string `json:"version"`
-	Language       string `json:"language"`
-	LCDLanguage    string `json:"lcd_language"`
-	OldBootloader  bool   `json:"old_bootloader"`
-	Tool           string `json:"tool"`
-	Output         string `json:"output"`
+	OK            bool   `json:"ok"`
+	Version       string `json:"version"`
+	Language      string `json:"language"`
+	LCDLanguage   string `json:"lcd_language"`
+	OldBootloader bool   `json:"old_bootloader"`
+	Tool          string `json:"tool"`
+	Output        string `json:"output"`
 }
 
 func firmwareLanguageDetails(language string) (string, string, bool) {
@@ -70,12 +70,6 @@ func locateFirmwareSketch(appDirectory, language string) string {
 		filepath.Join(appDirectory, "firmware", folder, file),
 	}
 	for _, candidate := range candidates {
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
-			return candidate
-		}
-	}
-	if language == "pl" {
-		candidate := filepath.Join(appDirectory, "firmware", "zapper_v5", "zapper_v5.ino")
 		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
 			return candidate
 		}
@@ -162,7 +156,11 @@ func flashFirmware(appDirectory string, request FirmwareFlashRequest) (FirmwareF
 		fqbn = "arduino:avr:nano:cpu=atmega328old"
 	}
 
-	buildDir, err := os.MkdirTemp("", "zapper-firmware-*")
+	buildRoot := filepath.Join(appDirectory, "data", "firmware-build")
+	if err := os.MkdirAll(buildRoot, 0o755); err != nil {
+		return FirmwareFlashResult{}, fmt.Errorf("nie udało się przygotować lokalnego katalogu kompilacji firmware: %w", err)
+	}
+	buildDir, err := os.MkdirTemp(buildRoot, "zapper-firmware-*")
 	if err != nil {
 		return FirmwareFlashResult{}, err
 	}
