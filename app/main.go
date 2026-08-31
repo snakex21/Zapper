@@ -125,7 +125,12 @@ func main() {
 		}
 		go func() {
 			time.Sleep(900 * time.Millisecond)
-			window.Terminate()
+			// WebView2 Terminate() wysyła WM_QUIT do kolejki WĄTKU,
+			// z którego zostało wywołane. Wywołanie go bezpośrednio z tej
+			// gorutyny zostawiało główną pętlę okna uruchomioną, a instalator
+			// czekał bez końca na zamknięcie Zapper.exe. Dispatch wykonuje
+			// Terminate na właściwym wątku UI.
+			terminateWindowOnUIThread(window)
 		}()
 		return result, nil
 	})
@@ -252,6 +257,15 @@ func main() {
 	window.Navigate(address)
 	window.Run()
 	close(windowStateStop)
+}
+
+type dispatchingWindow interface {
+	Dispatch(func())
+	Terminate()
+}
+
+func terminateWindowOnUIThread(window dispatchingWindow) {
+	window.Dispatch(window.Terminate)
 }
 
 func executableDirectory() (string, error) {

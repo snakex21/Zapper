@@ -22,7 +22,7 @@ import (
 const (
 	updateGitHubOwner = "snakex21"
 	updateGitHubRepo  = "Zapper"
-	portableMarker   = ".zapper-portable"
+	portableMarker    = ".zapper-portable"
 )
 
 type AppUpdateInfo struct {
@@ -116,7 +116,14 @@ func installLatestAppUpdate(appDirectory string) (AppUpdateInstallResult, error)
 		return AppUpdateInstallResult{}, fmt.Errorf("release v%s nie zawiera wymaganych plików %s i %s", latest, zipName, shaName)
 	}
 
-	updateRoot, err := os.MkdirTemp("", "ZapperUpdate-"+sanitizeVersion(latest)+"-")
+	// Aktualizacja jest częścią danych aplikacji portable. Nie używamy
+	// systemowego TEMP ani katalogu profilu użytkownika, dzięki czemu cały
+	// mechanizm pozostaje przenośny razem z folderem Zappera.
+	updateDataRoot := filepath.Join(appDirectory, "data", "update-staging")
+	if err := os.MkdirAll(updateDataRoot, 0o755); err != nil {
+		return AppUpdateInstallResult{}, fmt.Errorf("nie udało się przygotować lokalnego katalogu aktualizacji: %w", err)
+	}
+	updateRoot, err := os.MkdirTemp(updateDataRoot, "ZapperUpdate-"+sanitizeVersion(latest)+"-")
 	if err != nil {
 		return AppUpdateInstallResult{}, fmt.Errorf("nie udało się przygotować katalogu aktualizacji: %w", err)
 	}

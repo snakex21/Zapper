@@ -2,6 +2,16 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.2 — 2026-08-31
+
+### Reliability
+
+- Fixed automatic updates waiting forever after download because the WebView window was terminated from the wrong Windows thread.
+- The application now closes on the UI thread, lets the updater replace the running executable and starts the updated Zapper automatically.
+- Added a 30-second shutdown timeout, automatic recovery launch and a persistent local update log in `data/update.log`.
+- Update downloads and staging now stay inside the portable application folder under `data/update-staging` instead of using the Windows profile or temporary directories.
+- Added a regression test that requires application termination to be dispatched to the WebView UI thread.
+
 ## 10.3.1 — 2026-08-31
 
 ### Application

@@ -2,6 +2,34 @@ package main
 
 import "testing"
 
+type dispatchingWindowStub struct {
+	dispatched func()
+	terminated bool
+}
+
+func (window *dispatchingWindowStub) Dispatch(callback func()) {
+	window.dispatched = callback
+}
+
+func (window *dispatchingWindowStub) Terminate() {
+	window.terminated = true
+}
+
+func TestTerminateWindowIsDispatchedToUIThread(t *testing.T) {
+	window := &dispatchingWindowStub{}
+	terminateWindowOnUIThread(window)
+	if window.terminated {
+		t.Fatal("Terminate zostało wywołane na wątku wywołującym zamiast przez Dispatch")
+	}
+	if window.dispatched == nil {
+		t.Fatal("nie przekazano zamknięcia okna do Dispatch")
+	}
+	window.dispatched()
+	if !window.terminated {
+		t.Fatal("callback przekazany do Dispatch nie zamyka okna")
+	}
+}
+
 func TestVersionNewer(t *testing.T) {
 	tests := []struct {
 		candidate string
