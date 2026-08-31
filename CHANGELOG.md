@@ -2,6 +2,14 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.4 — 2026-08-31
+
+### Distribution
+
+- Removed the redundant external `Zapper.ico` from portable packages; the native window now loads icon resource ID 1 directly from `Zapper.exe`.
+- Kept the updater compatibility marker but marked it as a hidden Windows file, and the application restores that hidden attribute at startup after updates.
+- Portable startup removes obsolete package-owned files left behind by non-destructive updates from older releases.
+
 ## 10.3.3 — 2026-08-31
 
 ### Distribution

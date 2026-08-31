@@ -37,6 +37,9 @@ if (-not (Test-Path -LiteralPath (Join-Path $portableRoot "LICENSE"))) {
 if (-not (Test-Path -LiteralPath (Join-Path $portableRoot ".zapper-portable"))) {
     throw "Brak znacznika wersji portable wymaganego przez automatyczne aktualizacje."
 }
+if (Test-Path -LiteralPath (Join-Path $portableRoot "Zapper.ico")) {
+    throw "Paczka portable zawiera zbedna zewnetrzna kopie Zapper.ico."
+}
 $portableLocalizedFirmware = Join-Path $portableRoot "firmware\localized"
 if (-not (Test-Path -LiteralPath $portableLocalizedFirmware)) {
     throw "Brak wariantow firmware w paczce portable."
@@ -64,7 +67,17 @@ $stagingRoot = Join-Path $distRoot $packageName
 Copy-Item -LiteralPath $portableRoot -Destination $stagingRoot -Recurse -Force
 
 $zipPath = Join-Path $distRoot ($packageName + ".zip")
-Compress-Archive -LiteralPath $stagingRoot -DestinationPath $zipPath -CompressionLevel Optimal -Force
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[IO.Compression.ZipFile]::CreateFromDirectory($stagingRoot, $zipPath, [IO.Compression.CompressionLevel]::Optimal, $true)
+$archive = [IO.Compression.ZipFile]::OpenRead($zipPath)
+try {
+    $portableMarkerEntry = $archive.Entries | Where-Object { $_.FullName -match '(^|[\\/])\.zapper-portable$' } | Select-Object -First 1
+    if (-not $portableMarkerEntry) {
+        throw "ZIP release nie zawiera znacznika .zapper-portable wymaganego przez starsze aktualizatory."
+    }
+} finally {
+    $archive.Dispose()
+}
 Remove-Item -LiteralPath $stagingRoot -Recurse -Force
 
 $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()

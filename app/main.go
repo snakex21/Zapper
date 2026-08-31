@@ -28,6 +28,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	preparePortableInstall(appDirectory)
 	application, err := NewApplication(appDirectory)
 	if err != nil {
 		log.Fatal(err)
@@ -97,7 +98,7 @@ func main() {
 
 	errorSink.attach(window)
 	window.SetSize(1060, 680, webview2.HintMin)
-	setNativeWindowIcon(window.Window(), filepath.Join(appDirectory, "Zapper.ico"))
+	setNativeWindowIcon(window.Window())
 	setNativeWindowMaximized(window.Window(), savedWindow.Maximized)
 	windowStateStop := make(chan struct{})
 	go rememberWindowState(appDirectory, window.Window(), windowStateStop)

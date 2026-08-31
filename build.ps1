@@ -29,12 +29,10 @@ if ($LASTEXITCODE -ne 0) { throw "Audyt tlumaczen aktualizatora nie przeszedl." 
 $rootExe = Join-Path $PSScriptRoot "Zapper.exe"
 Write-Host "Budowanie Zapper.exe w glownym folderze..."
 go build -trimpath -ldflags="-s -w -H=windowsgui" -o $rootExe ./app
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "app\zapper.ico") -Destination (Join-Path $PSScriptRoot "Zapper.ico") -Force
 
 $devExe = Join-Path $generatedRoot "Zapper-dev.exe"
 Write-Host "Budowanie build\generated\Zapper-dev.exe..."
 go build -trimpath -ldflags="-s -w -H=windowsgui" -o $devExe ./app
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "app\zapper.ico") -Destination (Join-Path $generatedRoot "Zapper.ico") -Force
 
 $portableRoot = Join-Path $PSScriptRoot "build\Zapper"
 $portableData = Join-Path $portableRoot "data"
@@ -51,7 +49,6 @@ New-Item -ItemType Directory -Path $portableLocales -Force | Out-Null
 
 Write-Host "Budowanie build\Zapper\Zapper.exe..."
 go build -trimpath -ldflags="-s -w -H=windowsgui" -o (Join-Path $portableRoot "Zapper.exe") ./app
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "app\zapper.ico") -Destination (Join-Path $portableRoot "Zapper.ico") -Force
 
 # Wersja portable/release ma być czysta. Nigdy nie kopiujemy do niej lokalnych
 # profili, historii, logów, portu COM ani innych prywatnych danych z katalogu data.
@@ -75,6 +72,8 @@ if (Test-Path -LiteralPath $generatedFirmware) {
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "LICENSE") -Destination (Join-Path $portableRoot "LICENSE") -Force
 [IO.File]::WriteAllText((Join-Path $portableRoot ".zapper-portable"), "Zapper portable build`r`n", (New-Object System.Text.UTF8Encoding($false)))
+$portableMarkerPath = Join-Path $portableRoot ".zapper-portable"
+[IO.File]::SetAttributes($portableMarkerPath, ([IO.File]::GetAttributes($portableMarkerPath) -bor [IO.FileAttributes]::Hidden))
 
 # `go build ./...` (bez -o) zapisuje binarke pakietu main jako app.exe w biezacym katalogu.
 # Taki artefakt myli przy uruchamianiu, wiec sprzatamy go po kazdym budowaniu.

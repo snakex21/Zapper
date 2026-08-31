@@ -8,7 +8,7 @@ func setNativeWindowVisible(window unsafe.Pointer, visible bool) {}
 
 func setNativeWindowMaximized(window unsafe.Pointer, maximized bool) {}
 
-func setNativeWindowIcon(window unsafe.Pointer, iconPath string) {}
+func setNativeWindowIcon(window unsafe.Pointer) {}
 
 func nativeWindowState(window unsafe.Pointer) (windowState, bool) {
 	return windowState{}, false
