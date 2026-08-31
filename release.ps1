@@ -31,14 +31,10 @@ $dataRoot = Join-Path $portableRoot "data"
 if (-not (Test-Path -LiteralPath (Join-Path $portableRoot "Zapper.exe"))) {
     throw "Brak build\Zapper\Zapper.exe."
 }
-if (-not (Test-Path -LiteralPath (Join-Path $portableRoot "LICENSE"))) {
-    throw "Brak LICENSE w paczce portable."
-}
-if (-not (Test-Path -LiteralPath (Join-Path $portableRoot ".zapper-portable"))) {
-    throw "Brak znacznika wersji portable wymaganego przez automatyczne aktualizacje."
-}
-if (Test-Path -LiteralPath (Join-Path $portableRoot "Zapper.ico")) {
-    throw "Paczka portable zawiera zbedna zewnetrzna kopie Zapper.ico."
+foreach ($forbiddenRootFile in @(".zapper-portable", "LICENSE", "README_PORTABLE.txt", "Zapper.ico")) {
+    if (Test-Path -LiteralPath (Join-Path $portableRoot $forbiddenRootFile)) {
+        throw "Paczka portable zawiera zbedny plik: $forbiddenRootFile"
+    }
 }
 $portableLocalizedFirmware = Join-Path $portableRoot "firmware\localized"
 if (-not (Test-Path -LiteralPath $portableLocalizedFirmware)) {
@@ -71,9 +67,12 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory($stagingRoot, $zipPath, [IO.Compression.CompressionLevel]::Optimal, $true)
 $archive = [IO.Compression.ZipFile]::OpenRead($zipPath)
 try {
-    $portableMarkerEntry = $archive.Entries | Where-Object { $_.FullName -match '(^|[\\/])\.zapper-portable$' } | Select-Object -First 1
-    if (-not $portableMarkerEntry) {
-        throw "ZIP release nie zawiera znacznika .zapper-portable wymaganego przez starsze aktualizatory."
+    foreach ($forbiddenRootFile in @(".zapper-portable", "LICENSE", "README_PORTABLE.txt", "Zapper.ico")) {
+        $escapedName = [regex]::Escape($forbiddenRootFile)
+        $forbiddenEntry = $archive.Entries | Where-Object { $_.FullName -match "(^|[\\/])$escapedName$" } | Select-Object -First 1
+        if ($forbiddenEntry) {
+            throw "ZIP release zawiera zbedny plik: $forbiddenRootFile"
+        }
     }
 } finally {
     $archive.Dispose()

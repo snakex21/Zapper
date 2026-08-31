@@ -48,7 +48,7 @@ New-Item -ItemType Directory -Path $portableFirmware -Force | Out-Null
 New-Item -ItemType Directory -Path $portableLocales -Force | Out-Null
 
 Write-Host "Budowanie build\Zapper\Zapper.exe..."
-go build -trimpath -ldflags="-s -w -H=windowsgui" -o (Join-Path $portableRoot "Zapper.exe") ./app
+go build -trimpath -ldflags="-s -w -H=windowsgui -X zapper/app.appBuildFlavor=portable" -o (Join-Path $portableRoot "Zapper.exe") ./app
 
 # Wersja portable/release ma być czysta. Nigdy nie kopiujemy do niej lokalnych
 # profili, historii, logów, portu COM ani innych prywatnych danych z katalogu data.
@@ -69,11 +69,6 @@ if (Test-Path -LiteralPath $generatedFirmware) {
     Write-Host "Dolaczanie 30 wariantow jezykowych firmware do portable..."
     Copy-Item -LiteralPath $generatedFirmware -Destination (Join-Path $portableFirmware "localized") -Recurse -Force
 }
-
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "LICENSE") -Destination (Join-Path $portableRoot "LICENSE") -Force
-[IO.File]::WriteAllText((Join-Path $portableRoot ".zapper-portable"), "Zapper portable build`r`n", (New-Object System.Text.UTF8Encoding($false)))
-$portableMarkerPath = Join-Path $portableRoot ".zapper-portable"
-[IO.File]::SetAttributes($portableMarkerPath, ([IO.File]::GetAttributes($portableMarkerPath) -bor [IO.FileAttributes]::Hidden))
 
 # `go build ./...` (bez -o) zapisuje binarke pakietu main jako app.exe w biezacym katalogu.
 # Taki artefakt myli przy uruchamianiu, wiec sprzatamy go po kazdym budowaniu.

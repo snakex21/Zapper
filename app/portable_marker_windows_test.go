@@ -5,17 +5,14 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
 )
 
-func TestPreparePortableInstallHidesMarkerAndRemovesObsoletePackageFiles(t *testing.T) {
+func TestPreparePortableInstallRemovesObsoletePackageFiles(t *testing.T) {
 	directory := t.TempDir()
-	marker := filepath.Join(directory, portableMarker)
-	if err := os.WriteFile(marker, []byte("portable"), 0o644); err != nil {
-		t.Fatal(err)
-	}
 	obsolete := []string{
+		".zapper-portable",
+		"LICENSE",
 		"README_PORTABLE.txt",
 		"Zapper.ico",
 		filepath.Join("firmware", "languages.json"),
@@ -33,22 +30,29 @@ func TestPreparePortableInstallHidesMarkerAndRemovesObsoletePackageFiles(t *test
 		}
 	}
 
+	previousFlavor := appBuildFlavor
+	appBuildFlavor = "portable"
+	t.Cleanup(func() { appBuildFlavor = previousFlavor })
 	preparePortableInstall(directory)
 
-	markerUTF16, err := syscall.UTF16PtrFromString(marker)
-	if err != nil {
-		t.Fatal(err)
-	}
-	attributes, err := syscall.GetFileAttributes(markerUTF16)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if attributes&syscall.FILE_ATTRIBUTE_HIDDEN == 0 {
-		t.Fatal("znacznik portable nie został ukryty")
-	}
 	for _, relative := range obsolete {
 		if _, err := os.Stat(filepath.Join(directory, relative)); !os.IsNotExist(err) {
 			t.Fatalf("zbędny element paczki nadal istnieje: %s", relative)
 		}
+	}
+}
+
+func TestPreparePortableInstallDoesNotCleanDevelopmentDirectory(t *testing.T) {
+	directory := t.TempDir()
+	license := filepath.Join(directory, "LICENSE")
+	if err := os.WriteFile(license, []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	previousFlavor := appBuildFlavor
+	appBuildFlavor = "development"
+	t.Cleanup(func() { appBuildFlavor = previousFlavor })
+	preparePortableInstall(directory)
+	if _, err := os.Stat(license); err != nil {
+		t.Fatalf("build developerski usunął plik repozytorium: %v", err)
 	}
 }

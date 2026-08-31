@@ -2,6 +2,14 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.5 — 2026-08-31
+
+### Distribution
+
+- Removed `.zapper-portable` and `LICENSE` completely from application folders and release ZIP files.
+- Portable status is now compiled directly into `Zapper.exe`; update payloads are validated by their required application directory structure.
+- Portable startup removes marker and license files left behind by older releases.
+
 ## 10.3.4 — 2026-08-31
 
 ### Distribution

@@ -5,26 +5,16 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"syscall"
 )
 
 func preparePortableInstall(appDirectory string) {
-	markerPath := filepath.Join(appDirectory, portableMarker)
-	info, err := os.Stat(markerPath)
-	if err != nil || info.IsDir() {
+	if appBuildFlavor != "portable" {
 		return
 	}
-	path, err := syscall.UTF16PtrFromString(markerPath)
-	if err != nil {
-		return
-	}
-	attributes, err := syscall.GetFileAttributes(path)
-	if err != nil {
-		return
-	}
-	_ = syscall.SetFileAttributes(path, attributes|syscall.FILE_ATTRIBUTE_HIDDEN)
 
 	for _, obsoleteFile := range []string{
+		".zapper-portable",
+		"LICENSE",
 		"README_PORTABLE.txt",
 		"Zapper.ico",
 		filepath.Join("firmware", "languages.json"),

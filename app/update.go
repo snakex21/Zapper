@@ -22,8 +22,10 @@ import (
 const (
 	updateGitHubOwner = "snakex21"
 	updateGitHubRepo  = "Zapper"
-	portableMarker    = ".zapper-portable"
 )
+
+// Nadpisywane przez -ldflags wyłącznie podczas budowania wydania portable.
+var appBuildFlavor = "development"
 
 type AppUpdateInfo struct {
 	CurrentVersion   string `json:"current_version"`
@@ -208,8 +210,7 @@ func releaseAssetURLs(release githubRelease, zipName, shaName string) (string, s
 }
 
 func isPortableInstall(appDirectory string) bool {
-	info, err := os.Stat(filepath.Join(appDirectory, portableMarker))
-	return err == nil && !info.IsDir()
+	return appBuildFlavor == "portable"
 }
 
 func versionNewer(candidate, current string) (bool, error) {
@@ -414,7 +415,9 @@ func findPortablePayload(extractRoot string) (string, error) {
 		}
 	}
 	for _, candidate := range candidates {
-		if fileExists(filepath.Join(candidate, "Zapper.exe")) && fileExists(filepath.Join(candidate, portableMarker)) {
+		if fileExists(filepath.Join(candidate, "Zapper.exe")) &&
+			directoryExists(filepath.Join(candidate, "locales")) &&
+			directoryExists(filepath.Join(candidate, "firmware", "localized")) {
 			return candidate, nil
 		}
 	}
@@ -424,4 +427,9 @@ func findPortablePayload(extractRoot string) (string, error) {
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
+}
+
+func directoryExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }

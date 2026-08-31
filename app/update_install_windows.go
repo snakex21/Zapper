@@ -46,10 +46,6 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $source 'Zapper.exe'))) {
         throw 'Brak Zapper.exe w paczce aktualizacji.'
     }
-    if (-not (Test-Path -LiteralPath (Join-Path $source '.zapper-portable'))) {
-        throw 'Paczka nie jest prawidłowym wydaniem portable.'
-    }
-
 # Kopiujemy nowe wydanie na istniejącą instalację, ale nie kasujemy danych
 # użytkownika ani dodatkowych narzędzi. Nowe pliki zastępują stare, a katalog
 # data/ pozostaje dokładnie taki, jaki był przed aktualizacją.
