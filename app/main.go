@@ -111,10 +111,9 @@ func main() {
 					if previewErr != nil {
 						errorSink.appendToFile("błąd przygotowania pierwszej klatki WebView2: " + previewErr.Error())
 					}
-					// CapturePreview potwierdza, że dokument jest wyrenderowany. Krótki
-					// dodatkowy czas pozwala kontrolerowi WebView2 przedstawić tę samą
-					// klatkę w kompozytorze, nadal pod osłoną DWM. Nie tworzymy żadnego
-					// natywnego okna potomnego nad interfejsem.
+					// CapturePreview potwierdza render dokumentu. Krótkie oczekiwanie jest
+					// nadal potrzebne, aby DWM dostał gotową powierzchnię WebView2 i przy
+					// odsłonięciu nie pokazał na moment okna znajdującego się pod aplikacją.
 					time.AfterFunc(120*time.Millisecond, func() {
 						window.Dispatch(reveal)
 					})

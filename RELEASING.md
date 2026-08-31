@@ -1,13 +1,13 @@
 # Releasing Zapper
 
-The release version is defined by `appVersion` in `app/app.go`. Git tags must use the same version with a `v` prefix, for example `v10.4.1`.
+The release version is defined by `appVersion` in `app/app.go`. Git tags must use the same version with a `v` prefix, for example `v10.4.2`.
 
 ## Local release check
 
 Run:
 
 ```powershell
-.\release.ps1 -Tag v10.4.1
+.\release.ps1 -Tag v10.4.2
 ```
 
 or use `release.bat` for an interactive Windows build.
@@ -22,11 +22,11 @@ The release process:
 6. verifies that release `data/` is empty;
 7. creates a versioned Windows x64 ZIP and SHA-256 checksum in `dist/`.
 
-For version 10.4.1 the expected files are:
+For version 10.4.2 the expected files are:
 
 ```text
-dist/Zapper-v10.4.1-Windows-x64.zip
-dist/Zapper-v10.4.1-Windows-x64.zip.sha256
+dist/Zapper-v10.4.2-Windows-x64.zip
+dist/Zapper-v10.4.2-Windows-x64.zip.sha256
 ```
 
 ## GitHub Release
@@ -34,8 +34,8 @@ dist/Zapper-v10.4.1-Windows-x64.zip.sha256
 After the local release check passes:
 
 ```text
-git tag v10.4.1
-git push origin v10.4.1
+git tag v10.4.2
+git push origin v10.4.2
 ```
 
 The `.github/workflows/release.yml` workflow verifies that the tag matches `appVersion`, rebuilds the package on `windows-latest`, and publishes the ZIP plus SHA-256 checksum as a GitHub Release.

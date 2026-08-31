@@ -512,9 +512,6 @@ async function notifyApplicationReady() {
   // Wymuszenie układu gwarantuje, że pierwsza widoczna klatka natywnego okna
   // zawiera już gotowy interfejs, a nie dokument pośredni WebView2.
   document.body.getBoundingClientRect();
-  // Dajemy WebView2 czas na zatwierdzenie gotowej klatki w kompozytorze,
-  // zanim ukryte dotąd okno Windows zostanie pokazane.
-  await new Promise(resolve => setTimeout(resolve, 80));
   try {
     await window.apiApplicationReady();
   } catch (error) {

@@ -2,6 +2,13 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.4.2 — 2026-08-31
+
+### Startup
+
+- Removed a redundant 80 ms delay after the WebView2 document was already ready.
+- Kept the rendered preview barrier, DWM-cloaked initialization, compositor settling time and explicit WebView2 activation, preserving the clean first frame and interactive surface.
+
 ## 10.4.1 — 2026-08-31
 
 ### Startup

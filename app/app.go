@@ -12,7 +12,7 @@ import (
 
 // Zmienna pozwala zbudować starszą wersję wyłącznie do testu aktualizatora
 // przez -X main.appVersion=x.y.z. Zwykłe i release'owe buildy używają wartości poniżej.
-var appVersion = "10.4.1"
+var appVersion = "10.4.2"
 
 // maxManualRunRecords ogranicza rozrost dziennika trybu ręcznego.
 const maxManualRunRecords = 2000
