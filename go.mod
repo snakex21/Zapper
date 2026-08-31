@@ -7,6 +7,8 @@ require (
 	go.bug.st/serial v1.8.0
 )
 
+replace github.com/jchv/go-webview2 => ./third_party/go-webview2
+
 require (
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
 	golang.org/x/sys v0.43.0 // indirect

@@ -2,6 +2,17 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.3.8 — 2026-08-31
+
+### Startup
+
+- Eliminated the remaining one-frame startup flash by creating the native Windows window hidden.
+- The WebView now loads and lays out the complete interface off-screen, then reveals the window only once when the application reports that it is ready.
+- Before the native window is shown, WebView2 renders a complete in-memory `CapturePreview`; the preview completion callback is the signal that the first visible surface is ready.
+- Removed the intermediate `SetHtml` document and the second visible WebView navigation.
+- Added a 12-second safety fallback so an unexpected client-side startup failure can never leave the process permanently invisible.
+- WebView2 profile data is now stored in `data/webview2` beside the executable instead of the Windows user profile.
+
 ## 10.3.7 — 2026-08-31
 
 ### Startup

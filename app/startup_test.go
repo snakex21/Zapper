@@ -36,16 +36,17 @@ func TestStartupScreenHasCriticalStylesWithoutExternalImage(t *testing.T) {
 	}
 }
 
-func TestStartupBackgroundIsRemovedWhenApplicationIsReady(t *testing.T) {
+func TestNativeWindowIsNotRevealedBeforeApplicationIsReady(t *testing.T) {
 	content, err := applicationAssets.ReadFile("web/app.js")
 	if err != nil {
 		t.Fatal(err)
 	}
 	javascript := string(content)
-	removeBackground := strings.Index(javascript, `document.documentElement.style.removeProperty("background-color")`)
 	showApplication := strings.Index(javascript, `document.getElementById("app-shell").setAttribute("aria-hidden", "false")`)
-	if removeBackground < 0 || showApplication < 0 || removeBackground > showApplication {
-		t.Fatal("startup background must be removed before the application becomes visible")
+	hideLoading := strings.Index(javascript, `document.getElementById("loading-screen").classList.add("is-hidden")`)
+	notifyNativeWindow := strings.Index(javascript, `await notifyApplicationReady()`)
+	if showApplication < 0 || hideLoading < 0 || notifyNativeWindow < 0 || showApplication > notifyNativeWindow || hideLoading > notifyNativeWindow {
+		t.Fatal("native window must not be revealed before the application interface is ready")
 	}
 	stylesheet, err := applicationAssets.ReadFile("web/app.css")
 	if err != nil {

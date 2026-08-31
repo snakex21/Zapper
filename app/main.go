@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	webview2 "github.com/jchv/go-webview2"
@@ -76,11 +77,13 @@ func main() {
 		// Bez tego kazdy blad JS w oknie aplikacji jest calkowicie niewidoczny.
 		Debug:     false,
 		AutoFocus: true,
+		DataPath:  filepath.Join(appDirectory, "data", "webview2"),
 		WindowOptions: webview2.WindowOptions{
 			Title:  "Zapper — plan i dziennik",
 			Width:  uint(savedWindow.Width),
 			Height: uint(savedWindow.Height),
 			Center: true,
+			Hidden: true,
 		},
 	})
 	if window == nil {
@@ -88,28 +91,36 @@ func main() {
 	}
 	defer window.Destroy()
 
-	// WebView2 domyślnie maluje nowy dokument na biało, zanim przetworzy jego
-	// pierwszy arkusz stylów. Ustawienie tła już przy tworzeniu dokumentu usuwa
-	// jasną klatkę pomiędzy ekranem startowym a właściwym interfejsem.
-	window.Init(`document.documentElement.style.backgroundColor="#17231f";document.documentElement.style.colorScheme="light";`)
-
-	// Jedno natywne okno przez cały start. Zamiast chować/pokazywać HWND
-	// (co na Windows potrafi zepchnąć aplikację niżej w stosie okien), WebView
-	// od razu pokazuje lekki ekran startowy o tych samych kolorach co aplikacja.
-	window.SetHtml(`<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light"><style>
-		html,body{width:100%;height:100%;margin:0;background:#17231f;color:#fff;font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;overflow:hidden}
-		body{display:grid;place-items:center}.boot{display:grid;justify-items:center;gap:16px}.mark{display:grid;place-items:center;width:54px;height:54px;border-radius:11px;background:#20815f;font-size:24px;font-weight:800}.text{color:#afbeb8;font-size:15px}
-	</style></head><body><div class="boot"><div class="mark">Z</div><div class="text">Otwieranie dziennika…</div></div></body></html>`)
-
 	errorSink.attach(window)
 	window.SetSize(1060, 680, webview2.HintMin)
 	setNativeWindowIcon(window.Window())
-	setNativeWindowMaximized(window.Window(), savedWindow.Maximized)
 	windowStateStop := make(chan struct{})
-	go rememberWindowState(appDirectory, window.Window(), windowStateStop)
+	var showWindowOnce sync.Once
+	showApplicationWindow := func() {
+		showWindowOnce.Do(func() {
+			window.Dispatch(func() {
+				reveal := func() {
+					showNativeApplicationWindow(window.Window(), savedWindow.Maximized)
+					go rememberWindowState(appDirectory, window.Window(), windowStateStop)
+				}
+				if captureErr := window.CapturePreview(func(previewErr error) {
+					if previewErr != nil {
+						errorSink.appendToFile("błąd przygotowania pierwszej klatki WebView2: " + previewErr.Error())
+					}
+					window.Dispatch(reveal)
+				}); captureErr != nil {
+					errorSink.appendToFile("nie rozpoczęto przygotowania pierwszej klatki WebView2: " + captureErr.Error())
+					reveal()
+				}
+			})
+		})
+	}
 
 	mustBind(window, "apiLoad", func() Snapshot {
 		return application.Snapshot()
+	})
+	mustBind(window, "apiApplicationReady", func() {
+		showApplicationWindow()
 	})
 	mustBind(window, "apiLoadSettings", func() (AppSettings, error) {
 		return loadAppSettings(appDirectory)
@@ -260,6 +271,8 @@ func main() {
 	if startView := os.Getenv("ZAPPER_START_VIEW"); startView != "" {
 		address += "?view=" + url.QueryEscape(startView)
 	}
+	startupFallback := time.AfterFunc(12*time.Second, showApplicationWindow)
+	defer startupFallback.Stop()
 	window.Navigate(address)
 	window.Run()
 	close(windowStateStop)

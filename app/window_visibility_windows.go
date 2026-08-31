@@ -40,6 +40,8 @@ type nativeWindowPlacement struct {
 
 var user32DLL = syscall.NewLazyDLL("user32.dll")
 var showWindowProc = user32DLL.NewProc("ShowWindow")
+var updateWindowProc = user32DLL.NewProc("UpdateWindow")
+var setForegroundWindowProc = user32DLL.NewProc("SetForegroundWindow")
 var getWindowPlacementProc = user32DLL.NewProc("GetWindowPlacement")
 var loadImageWProc = user32DLL.NewProc("LoadImageW")
 var sendMessageWProc = user32DLL.NewProc("SendMessageW")
@@ -55,6 +57,20 @@ func setNativeWindowVisible(window unsafe.Pointer, visible bool) {
 		command = uintptr(swShow)
 	}
 	_, _, _ = showWindowProc.Call(uintptr(window), command)
+}
+
+func showNativeApplicationWindow(window unsafe.Pointer, maximized bool) {
+	if window == nil {
+		return
+	}
+	handle := uintptr(window)
+	command := uintptr(swShow)
+	if maximized {
+		command = uintptr(swMaximize)
+	}
+	_, _, _ = showWindowProc.Call(handle, command)
+	_, _, _ = updateWindowProc.Call(handle)
+	_, _, _ = setForegroundWindowProc.Call(handle)
 }
 
 func setNativeWindowMaximized(window unsafe.Pointer, maximized bool) {

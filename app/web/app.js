@@ -508,6 +508,20 @@ async function changeApplicationLanguage(event) {
   }
 }
 
+async function notifyApplicationReady() {
+  // Wymuszenie układu gwarantuje, że pierwsza widoczna klatka natywnego okna
+  // zawiera już gotowy interfejs, a nie dokument pośredni WebView2.
+  document.body.getBoundingClientRect();
+  // Dajemy WebView2 czas na zatwierdzenie gotowej klatki w kompozytorze,
+  // zanim ukryte dotąd okno Windows zostanie pokazane.
+  await new Promise(resolve => setTimeout(resolve, 80));
+  try {
+    await window.apiApplicationReady();
+  } catch (error) {
+    window.zapperReportError("apiApplicationReady", error);
+  }
+}
+
 async function initialize() {
   // Kazdy z tych kroków osobno: pojedynczy blad (np. brakujace id w HTML)
   // nie moze juz po cichu wylaczyc wszystkich pozostalych przyciskow.
@@ -541,9 +555,9 @@ async function initialize() {
     if (requestedView && VIEW_TITLES[requestedView]) openView(requestedView);
     syncTherapyView();
     document.getElementById("app-version").textContent = `v${snapshot.meta.version}`;
-    document.documentElement.style.removeProperty("background-color");
     document.getElementById("app-shell").setAttribute("aria-hidden", "false");
     document.getElementById("loading-screen").classList.add("is-hidden");
+    await notifyApplicationReady();
     await refreshFirmwareFlashInfo();
     await refreshDevicePorts(false);
     devicePollTimer = setInterval(pollDeviceStatus, 750);
@@ -555,6 +569,7 @@ async function initialize() {
     setTimeout(() => checkForAppUpdate(false), 1200);
   } catch (error) {
     showFatal(error);
+    await notifyApplicationReady();
   }
 }
 
