@@ -45,6 +45,7 @@ type browser interface {
 	CapturePreview(callback func([]byte, error)) error
 	NotifyParentWindowPositionChanged() error
 	Focus()
+	Show() error
 }
 
 type webview struct {
@@ -352,6 +353,17 @@ func (w *webview) CreateWithOptions(opts WindowOptions) bool {
 
 func (w *webview) Destroy() {
 	_, _, _ = w32.User32PostMessageW.Call(w.hwnd, w32.WMClose, 0, 0)
+}
+
+func (w *webview) Show() error {
+	if err := w.browser.Show(); err != nil {
+		return err
+	}
+	_, _, _ = w32.User32ShowWindow.Call(w.hwnd, w32.SWShow)
+	_, _, _ = w32.User32UpdateWindow.Call(w.hwnd)
+	_, _, _ = w32.User32SetFocus.Call(w.hwnd)
+	w.browser.Focus()
+	return nil
 }
 
 func (w *webview) Run() {

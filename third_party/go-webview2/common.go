@@ -46,6 +46,10 @@ type WebView interface {
 	// NSWindow pointer, when using Win32 backend the pointer is HWND pointer.
 	Window() unsafe.Pointer
 
+	// Show makes both the native host window and the WebView2 controller visible
+	// and focuses the browser surface. This is required after Hidden startup.
+	Show() error
+
 	// SetTitle updates the title of the native window. Must be called from the UI
 	// thread.
 	SetTitle(title string)

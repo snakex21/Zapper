@@ -2,6 +2,14 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.4.1 — 2026-08-31
+
+### Startup
+
+- Removed the native first-frame overlay completely because it could remain above WebView2 and block every mouse click.
+- The real WebView2 controller is explicitly activated, shown and focused while the parent window is still DWM-cloaked.
+- The application waits for a completed WebView2 preview and a short compositor settling interval, then reveals only the real interactive window.
+
 ## 10.4.0 — 2026-08-31
 
 ### Updates
