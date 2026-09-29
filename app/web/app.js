@@ -660,7 +660,7 @@ function bindStaticActions() {
   document.getElementById("today-list").addEventListener("click", async event => {
     const dismissButton = event.target.closest("[data-dismiss-session-group]");
     if (dismissButton) {
-      if (!armDestructive(dismissButton, `dismiss-group-${dismissButton.dataset.dismissSessionGroup}`, "Kliknij ponownie: odpuść ten termin")) return;
+      if (!armDestructive(dismissButton, `dismiss-group-${dismissButton.dataset.dismissSessionGroup}`, uiText("dismissTermConfirm", "Kliknij ponownie: odpuść ten termin"))) return;
       await runAction(dismissButton, async () => {
         snapshot = await window.apiDismissSessionGroup(dismissButton.dataset.dismissSessionGroup);
         syncDraft();
@@ -671,7 +671,7 @@ function bindStaticActions() {
     }
     const button = event.target.closest("[data-session-done]");
     if (!button) return;
-    if (button.dataset.outOfOrder === "true" && button.dataset.done !== "true" && !armDestructive(button, `out-of-order-done-${button.dataset.sessionDone}`, "Kliknij ponownie: wykonaj poza kolejnością")) return;
+    if (button.dataset.outOfOrder === "true" && button.dataset.done !== "true" && !armDestructive(button, `out-of-order-done-${button.dataset.sessionDone}`, uiText("outOfOrderConfirm", "Kliknij ponownie: wykonaj poza kolejnością"))) return;
     await runAction(button, async () => {
       snapshot = await window.apiSetSessionDone(button.dataset.sessionDone, button.dataset.done !== "true");
       renderToday();
@@ -685,7 +685,7 @@ function bindStaticActions() {
   document.getElementById("overdue-actions").addEventListener("click", async event => {
     const button = event.target.closest("[data-dismiss-overdue]");
     if (!button) return;
-    if (!armDestructive(button, `dismiss-${button.dataset.dismissOverdue}`, "Kliknij ponownie: odpuść zaległości")) return;
+    if (!armDestructive(button, `dismiss-${button.dataset.dismissOverdue}`, uiText("dismissOverdueConfirm", "Kliknij ponownie: odpuść zaległości"))) return;
     await runAction(button, async () => {
       snapshot = await window.apiDismissOverdueSessions(button.dataset.dismissOverdue);
       renderAll();
@@ -706,7 +706,7 @@ function bindStaticActions() {
 
   document.getElementById("reset-progress").addEventListener("click", async event => {
     const button = event.currentTarget;
-    if (!armDestructive(button, "reset-progress", "Kliknij ponownie, aby potwierdzić")) return;
+    if (!armDestructive(button, "reset-progress", uiText("confirmAgain", "Kliknij ponownie, aby potwierdzić"))) return;
     await runAction(button, async () => {
       snapshot = await window.apiResetProgress();
       renderToday();
@@ -1549,7 +1549,7 @@ async function pauseDevice(event) {
 async function startProfileOnDevice(event) {
   const dismissButton = event.target.closest("[data-dismiss-session-group]");
   if (dismissButton) {
-    if (!armDestructive(dismissButton, `dismiss-group-${dismissButton.dataset.dismissSessionGroup}`, "Kliknij ponownie: odpuść ten termin")) return;
+    if (!armDestructive(dismissButton, `dismiss-group-${dismissButton.dataset.dismissSessionGroup}`, uiText("dismissTermConfirm", "Kliknij ponownie: odpuść ten termin"))) return;
     await runAction(dismissButton, async () => {
       snapshot = await window.apiDismissSessionGroup(dismissButton.dataset.dismissSessionGroup);
       syncDraft();
@@ -1580,7 +1580,7 @@ async function startProfileOnDevice(event) {
   }
   const button = event.target.closest("[data-device-session]");
   if (!button) return;
-  if (button.dataset.outOfOrder === "true" && !armDestructive(button, `out-of-order-start-${button.dataset.deviceSession}`, "Kliknij ponownie: wykonaj poza kolejnością")) return;
+  if (button.dataset.outOfOrder === "true" && !armDestructive(button, `out-of-order-start-${button.dataset.deviceSession}`, uiText("outOfOrderConfirm", "Kliknij ponownie: wykonaj poza kolejnością"))) return;
   await runAction(button, async () => {
     if (button.dataset.manualPause === "true") {
       activeSessionKind = "manual";
@@ -2171,7 +2171,7 @@ function handleInspectorClick(event) {
   }
   if (action === "delete-profile" && profile) {
     if (!profile.id) {
-      if (!armDestructive(button, `profile-${selectedProfile}`, "Kliknij ponownie: usuń niezapisany profil")) return;
+      if (!armDestructive(button, `profile-${selectedProfile}`, uiText("deleteUnsavedProfile", "Kliknij ponownie: usuń niezapisany profil"))) return;
       draftConfig.profiles.splice(selectedProfile, 1);
       selectedProfile = Math.max(0, selectedProfile - 1);
       selectedPhase = 0;
@@ -2183,7 +2183,7 @@ function handleInspectorClick(event) {
       toast("Najpierw zapisz zmiany w profilach", true);
       return;
     }
-    if (!armDestructive(button, `profile-${profile.id}`, "Kliknij ponownie: usuń i archiwizuj")) return;
+    if (!armDestructive(button, `profile-${profile.id}`, uiText("deleteArchive", "Kliknij ponownie: usuń i archiwizuj"))) return;
     runAction(button, async () => {
       snapshot = await window.apiDeleteProfile(profile.id);
       selectedProfile = 0;
@@ -2202,7 +2202,7 @@ function handleInspectorClick(event) {
       toast("Najpierw zapisz profil", true);
       return;
     }
-    if (!armDestructive(button, `finish-${profile.id}`, "Kliknij ponownie: przenieś do archiwum")) return;
+    if (!armDestructive(button, `finish-${profile.id}`, uiText("moveArchive", "Kliknij ponownie: przenieś do archiwum"))) return;
     runAction(button, async () => {
       snapshot = await window.apiFinishProfile(profile.id);
       selectedProfile = 0;
@@ -2213,7 +2213,7 @@ function handleInspectorClick(event) {
     });
   }
   if (action === "delete-phase" && phase) {
-    if (!armDestructive(button, `phase-${selectedProfile}-${selectedPhase}`, "Kliknij ponownie: usuń fazę")) return;
+    if (!armDestructive(button, `phase-${selectedProfile}-${selectedPhase}`, uiText("deletePhaseConfirm", "Kliknij ponownie: usuń fazę"))) return;
     profile.phases.splice(selectedPhase, 1);
     selectedPhase = Math.max(0, selectedPhase - 1);
     setDirty();

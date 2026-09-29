@@ -15,8 +15,12 @@
     lastX: 0,
     lastY: 0,
     labels: true,
-    autoFrame: true
+    fit: null,
+    view: 'iso',
+    pointers: new Map(),
+    pinchDistance: 0
   };
+  let framePending = false;
 
   const C = {
     bg: '#f5f8f9', board: '#f2f0e7', boardEdge: '#c9c6ba', hole: '#8f9aa0',
@@ -58,29 +62,37 @@
     return { x: rect.width/2 + state.panX + r.x*s, y: rect.height/2 + state.panY + r.y*s, z:r.z, s };
   }
 
-  // Domyślny widok ma być faktycznie wyśrodkowany w całym polu, a nie tylko
-  // względem samego breadboardu. LCD i KY-040 mocno poszerzają scenę, dlatego
-  // liczymy ramkę całego montażu i dopiero z niej ustawiamy przesunięcie.
-  function frameScene(){
-    const rect=canvas.getBoundingClientRect();
-    if(rect.width<2 || rect.height<2) return;
+  // Ramki (w jednostkach sceny) dla całego montażu i zbliżeń modułów.
+  // Skala i przesunięcie są liczone z rzutu ramki, więc każdy preset wypełnia
+  // pole niezależnie od rozmiaru okna.
+  const FRAMES = {
+    all: {minX:-700,maxX:670,minY:-370,maxY:335,minZ:-80,maxZ:190},
+    lcd: {minX:-700,maxX:-120,minY:-190,maxY:60,minZ:-10,maxZ:140},
+    ky:  {minX:120,maxX:670,minY:-190,maxY:120,minZ:-10,maxZ:140}
+  };
+  const ZOOM_MIN=.25, ZOOM_MAX=4;
 
-    state.panX=0;
-    state.panY=0;
-
-    const bounds={minX:-700,maxX:670,minY:-385,maxY:355,minZ:-80,maxZ:190};
+  function projectedBox(bounds){
     const points=[];
     for(const x of [bounds.minX,bounds.maxX]){
       for(const y of [bounds.minY,bounds.maxY]){
         for(const z of [bounds.minZ,bounds.maxZ]) points.push(project(v(x,y,z)));
       }
     }
-    const minX=Math.min(...points.map(p=>p.x));
-    const maxX=Math.max(...points.map(p=>p.x));
-    const minY=Math.min(...points.map(p=>p.y));
-    const maxY=Math.max(...points.map(p=>p.y));
-    state.panX=(rect.width-(minX+maxX))/2;
-    state.panY=(rect.height-(minY+maxY))/2;
+    const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
+    return {minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};
+  }
+
+  function frameScene(bounds){
+    const rect=canvas.getBoundingClientRect();
+    if(rect.width<2 || rect.height<2) return;
+    state.panX=0; state.panY=0; state.zoom=1;
+    let b=projectedBox(bounds);
+    const k=Math.min(rect.width*.94/Math.max(1,b.maxX-b.minX), rect.height*.92/Math.max(1,b.maxY-b.minY));
+    state.zoom=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,k));
+    b=projectedBox(bounds);
+    state.panX=(rect.width-(b.minX+b.maxX))/2;
+    state.panY=(rect.height-(b.minY+b.maxY))/2;
   }
 
   function poly(points, fill, stroke, width=1){
@@ -117,7 +129,7 @@
     ctx.save();
     ctx.font=`800 ${size}px Consolas, monospace`;
     ctx.textAlign=opts.align||'center'; ctx.textBaseline='middle';
-    ctx.lineWidth=2.4; ctx.strokeStyle='rgba(0,0,0,.42)'; ctx.strokeText(text,q.x+(opts.dx||0),q.y+(opts.dy||0));
+    if(opts.outline!==false){ ctx.lineWidth=2.4; ctx.strokeStyle='rgba(0,0,0,.42)'; ctx.strokeText(text,q.x+(opts.dx||0),q.y+(opts.dy||0)); }
     ctx.fillStyle=opts.color||'#eef8fc'; ctx.fillText(text,q.x+(opts.dx||0),q.y+(opts.dy||0));
     ctx.restore();
   }
@@ -166,15 +178,13 @@
         label(v(B.x+B.w+12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:10});
       }
     }
-    silkText(v(0,rowY(19),8),'PŁYTKA STYKOWA 400 PÓL · A–J / 1–30',{size:10,color:'#5f676b'});
+    silkText(v(0,B.y+B.h-12,4),'400 · A–J / 1–30',{size:9,color:'#7a8387',outline:false});
 
     // Otwory krytyczne dla rezystora/wyjścia. Etykiety rozstawione osobno, żeby się nie zlewały.
     circle3(v(colX.I,rowY(5),11),7,'#fff3e0',C.out,3);
     circle3(v(colX.I,rowY(1),11),7,'#fff3e0',C.out,3);
     circle3(v(colX.J,rowY(1),11),7,'#fff3e0',C.out,3);
-    label(v(colX.I,rowY(5),18),'i5 · D9/H5',{size:9,bg:'#fff8e1',stroke:C.out,dx:78,dy:22});
-    label(v(colX.I,rowY(1),18),'i1 · rezystor',{size:9,bg:'#fff8e1',stroke:C.out,dx:58,dy:-39});
-    label(v(colX.J,rowY(1),18),'j1 · czerwony OUT',{size:9,bg:'#fff8e1',stroke:C.out,dx:126,dy:-10});
+    label(v(colX.I,rowY(5),18),'i5 · D9/H5',{size:9,bg:'#fff8e1',stroke:C.out,dx:62,dy:14});
   }
 
   function drawBoardConnector(col,row,color,text,opts={}){
@@ -194,7 +204,7 @@
     drawBoardConnector('A',13,C.red,'a13 · LCD VCC',{dx:-58,dy:-23});
     drawBoardConnector('B',13,C.red,'b13 · KY +',{dx:64,dy:32});
     drawBoardConnector('A',15,C.black,'a15 · LCD GND',{dx:-42});
-    drawBoardConnector('B',15,C.black,'b15 · CZARNY',{dx:38,dy:14});
+    drawBoardConnector('B',15,C.black,'b15 · GND',{dx:-22,dy:24});
 
     // Prawa połowa F–J: te otwory są połączone poziomo z prawą listwą Nano w kolumnie H.
     drawBoardConnector('J',10,C.cyan,'j10 · SW',{dx:35});
@@ -234,19 +244,19 @@
     for(const off of [-14,0,14]){
       line([v(x-11,(y1+y5)/2+off,z+11),v(x+11,(y1+y5)/2+off,z+11)],off===0?'#d32f2f':'#6d4c41',3);
     }
-    label(v(x,(y1+y5)/2,z+34),'1 kΩ · i5 → i1',{size:10,bg:'#fff8e1',stroke:C.out,dx:96,dy:-28});
+    label(v(x,(y1+y5)/2,z+34),'1 kΩ · i5 → i1',{size:10,bg:'#fff8e1',stroke:C.out,dx:70,dy:-6});
 
     // Czerwony krokodylek: wyjście z j1, wysoko nad KY-040.
     const redY=y1-48;
     wire([v(colX.J,y1,12),v(260,redY,58),v(420,redY,58)],C.out,5);
-    label(v(310,redY,68),'j1 → czerwony krokodylek',{size:10,bg:'#fff3e0',stroke:C.out,dy:-16});
-    drawClip(v(475,redY,58),C.red,'CZERWONY');
+    label(v(330,redY,68),'j1 → OUT +',{size:10,bg:'#fff3e0',stroke:C.out,dy:-16});
+    drawClip(v(475,redY,58),C.red,'+');
 
     // Czarny krokodylek: osobna dolna trasa, daleko pod KY-040.
     const blackY=rowY(28)+46;
     wire([v(colX.B,rowY(15),38),v(250,blackY,38),v(420,blackY,38)],C.black,5);
-    label(v(305,blackY,48),'b15 → czarny krokodylek',{size:10,bg:'#fff',stroke:'#777',dy:-16});
-    drawClip(v(475,blackY,38),C.black,'CZARNY');
+    label(v(330,blackY,48),'b15 → GND −',{size:10,bg:'#fff',stroke:'#777',dy:-16});
+    drawClip(v(475,blackY,38),C.black,'−');
   }
 
   function drawClip(p,color,text){
@@ -254,7 +264,7 @@
     ctx.save(); ctx.translate(q.x,q.y); ctx.scale(s,s);
     ctx.fillStyle=color; ctx.strokeStyle='#111'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(-34,-10); ctx.lineTo(25,-14); ctx.lineTo(48,0); ctx.lineTo(25,14); ctx.lineTo(-34,10); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font='700 9px Segoe UI'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,2,0); ctx.restore();
+    ctx.fillStyle='#fff'; ctx.font='800 14px Segoe UI, Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,2,0); ctx.restore();
   }
 
   function drawLCD(){
@@ -319,7 +329,7 @@
       box(cx-52,cy+18,z-19,28,13,6,'#30363a','#111');
       box(cx+8,cy+18,z-19,22,12,6,'#b5a26d','#6b603f');
       box(cx+48,cy+18,z-19,22,12,6,'#b5a26d','#6b603f');
-      silkText(v(cx,cy+55,z-24),'KY-040 · TYŁ PCB',{size:8,color:'#eef8fc'});
+      silkText(v(cx,cy+55,z-24),'KY-040 · PCB',{size:8,color:'#eef8fc'});
     }
     for(let i=0;i<5;i++){
       const px=cx-78+i*39, py=cy+104;
@@ -332,7 +342,6 @@
       pins.push(v(px,py,z-68));
       if(!frontVisible) label(v(px,py,z-71),names[i],{size:9,bg:'#fff',stroke:pinColors[i],dy:20});
     }
-    if(!frontVisible) label(v(cx,cy-2,z-47),'PINY / LUTOWANIE OD TYŁU',{size:9,bg:'rgba(20,20,20,.88)',color:'#fff',stroke:'#555'});
     return { pins, names };
   }
 
@@ -378,19 +387,10 @@
     });
   }
 
-  function drawTitle(){
-    ctx.save();
-    ctx.fillStyle='rgba(255,255,255,.92)'; ctx.strokeStyle='#d5dee2'; ctx.lineWidth=1;
-    roundRect(18,18,390,66,10); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=C.text; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='800 19px Segoe UI, Arial'; ctx.fillText('MONTAŻ 3D — PŁYTKA + PINY OD TYŁU',34,31);
-    ctx.font='600 12px Segoe UI, Arial'; ctx.fillStyle='#52666f'; ctx.fillText('Przeciągnij: obrót · rolka: zoom · prawy/Shift: przesunięcie',34,58);
-    ctx.restore();
-  }
-
   function render(){
     const rect=canvas.getBoundingClientRect();
     if(rect.width<2 || rect.height<2) return;
-    if(state.autoFrame) frameScene();
+    if(state.fit) frameScene(state.fit);
     const dpr=Math.min(window.devicePixelRatio||1,2);
     const cssW=rect.width, cssH=rect.height;
     const w=Math.max(1,Math.round(cssW*dpr)), h=Math.max(1,Math.round(cssH*dpr));
@@ -410,39 +410,126 @@
     drawNano();
     drawLCD();
     drawKY();
-    drawTitle();
+  }
+
+  function requestRender(){
+    if(framePending) return;
+    framePending=true;
+    requestAnimationFrame(()=>{ framePending=false; render(); });
+  }
+
+  const VIEWS = {
+    iso:     {yaw:-.32, pitch:.42, fit:FRAMES.all},
+    top:     {yaw:0,    pitch:0,   fit:FRAMES.all},
+    rear:    {yaw:Math.PI, pitch:.34, fit:FRAMES.all},
+    lcdRear: {yaw:2.55, pitch:.40, fit:FRAMES.lcd},
+    kyRear:  {yaw:-2.48, pitch:.40, fit:FRAMES.ky}
+  };
+
+  function syncToolbar(){
+    document.querySelectorAll('[data-wiring3d-view]').forEach(button=>{
+      const active=button.dataset.wiring3dView===state.view;
+      button.classList.toggle('is-active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    document.querySelectorAll('[data-wiring3d-labels]').forEach(button=>{
+      button.classList.toggle('is-active',state.labels);
+      button.setAttribute('aria-pressed',String(state.labels));
+    });
   }
 
   function setView(name){
-    state.autoFrame=false;
-    if(name==='top'){ state.yaw=0; state.pitch=0; state.zoom=.82; state.panX=0; state.panY=10; }
-    else if(name==='rear'){ state.yaw=Math.PI; state.pitch=0.34; state.zoom=.80; state.panX=0; state.panY=20; }
-    else if(name==='lcdRear'){ state.yaw=2.55; state.pitch=.40; state.zoom=1.05; state.panX=210; state.panY=25; }
-    else if(name==='kyRear'){ state.yaw=-2.48; state.pitch=.40; state.zoom=1.05; state.panX=-210; state.panY=25; }
-    else {
-      // Widok montażowy / Reset: prosto od przodu i automatycznie na środku.
-      state.yaw=0; state.pitch=0; state.zoom=.82; state.panX=0; state.panY=0; state.autoFrame=true;
-    }
+    const preset=VIEWS[name]||VIEWS.iso;
+    state.view=VIEWS[name]?name:'iso';
+    state.yaw=preset.yaw; state.pitch=preset.pitch; state.fit=preset.fit;
+    syncToolbar();
     render();
   }
+
+  function releaseFit(){
+    if(!state.fit) return;
+    state.fit=null;
+    state.view='';
+    syncToolbar();
+  }
+
+  function zoomAt(factor, clientX, clientY){
+    const rect=canvas.getBoundingClientRect();
+    const next=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,state.zoom*factor));
+    const k=next/state.zoom;
+    const mx=(clientX??rect.left+rect.width/2)-rect.left-rect.width/2;
+    const my=(clientY??rect.top+rect.height/2)-rect.top-rect.height/2;
+    state.panX=mx-(mx-state.panX)*k;
+    state.panY=my-(my-state.panY)*k;
+    state.zoom=next;
+    releaseFit();
+    requestRender();
+  }
+
+  function rotateBy(dx,dy){
+    state.yaw+=dx;
+    state.pitch=Math.max(-1.45,Math.min(1.45,state.pitch+dy));
+    releaseFit();
+    requestRender();
+  }
+
   window.wiring3dView=setView;
   window.wiring3dReset=()=>setView('iso');
-  window.wiring3dToggleLabels=()=>{state.labels=!state.labels;render();};
+  window.wiring3dToggleLabels=()=>{state.labels=!state.labels;syncToolbar();render();};
+
+  const pinchDistance=()=>{
+    const [a,b]=[...state.pointers.values()];
+    return Math.hypot(a.x-b.x,a.y-b.y);
+  };
 
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   canvas.addEventListener('pointerdown',e=>{
-    state.autoFrame=false;
-    state.dragging=true; state.panning=e.button===2||e.shiftKey; state.lastX=e.clientX; state.lastY=e.clientY; canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); e.preventDefault();
+    canvas.focus({preventScroll:true});
+    state.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(state.pointers.size===2) state.pinchDistance=pinchDistance();
+    state.dragging=true; state.panning=e.button===2||e.shiftKey; state.lastX=e.clientX; state.lastY=e.clientY;
+    canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); e.preventDefault();
   });
   canvas.addEventListener('pointermove',e=>{
-    if(!state.dragging)return; const dx=e.clientX-state.lastX,dy=e.clientY-state.lastY; state.lastX=e.clientX;state.lastY=e.clientY;
-    if(state.panning||e.shiftKey){state.panX+=dx;state.panY+=dy;} else {state.yaw+=dx*.008;state.pitch=Math.max(-1.45,Math.min(1.45,state.pitch-dy*.008));}
-    render(); e.preventDefault();
+    if(!state.dragging||!state.pointers.has(e.pointerId))return;
+    state.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(state.pointers.size>=2){
+      const distance=pinchDistance();
+      const [a,b]=[...state.pointers.values()];
+      if(state.pinchDistance>0) zoomAt(distance/state.pinchDistance,(a.x+b.x)/2,(a.y+b.y)/2);
+      state.pinchDistance=distance;
+      e.preventDefault();
+      return;
+    }
+    const dx=e.clientX-state.lastX,dy=e.clientY-state.lastY; state.lastX=e.clientX;state.lastY=e.clientY;
+    if(state.panning||e.shiftKey){state.panX+=dx;state.panY+=dy;releaseFit();requestRender();}
+    else rotateBy(dx*.008,-dy*.008);
+    e.preventDefault();
   });
-  const end=e=>{state.dragging=false;state.panning=false;canvas.classList.remove('dragging');try{canvas.releasePointerCapture(e.pointerId);}catch(_){}};
+  const end=e=>{
+    state.pointers.delete(e.pointerId);
+    state.pinchDistance=0;
+    if(state.pointers.size>0){ const p=[...state.pointers.values()][0]; state.lastX=p.x; state.lastY=p.y; return; }
+    state.dragging=false;state.panning=false;canvas.classList.remove('dragging');try{canvas.releasePointerCapture(e.pointerId);}catch(_){}
+  };
   canvas.addEventListener('pointerup',end); canvas.addEventListener('pointercancel',end);
-  canvas.addEventListener('wheel',e=>{state.autoFrame=false;state.zoom=Math.max(.55,Math.min(2.0,state.zoom*(e.deltaY<0?1.08:.92)));render();e.preventDefault();},{passive:false});
+  canvas.addEventListener('wheel',e=>{zoomAt(e.deltaY<0?1.1:1/1.1,e.clientX,e.clientY);e.preventDefault();},{passive:false});
   canvas.addEventListener('dblclick',e=>{setView('iso');e.preventDefault();});
-  new ResizeObserver(render).observe(scene||canvas);
-  render();
+  canvas.addEventListener('keydown',e=>{
+    const step=e.shiftKey?40:.08;
+    const keys={
+      ArrowLeft:()=>e.shiftKey?(state.panX-=step,releaseFit(),requestRender()):rotateBy(-step,0),
+      ArrowRight:()=>e.shiftKey?(state.panX+=step,releaseFit(),requestRender()):rotateBy(step,0),
+      ArrowUp:()=>e.shiftKey?(state.panY-=step,releaseFit(),requestRender()):rotateBy(0,step),
+      ArrowDown:()=>e.shiftKey?(state.panY+=step,releaseFit(),requestRender()):rotateBy(0,-step),
+      '+':()=>zoomAt(1.12), '=':()=>zoomAt(1.12), '-':()=>zoomAt(1/1.12),
+      '0':()=>setView('iso'), Home:()=>setView('iso'),
+      l:()=>window.wiring3dToggleLabels(), L:()=>window.wiring3dToggleLabels()
+    };
+    if(!keys[e.key]) return;
+    keys[e.key]();
+    e.preventDefault();
+  });
+  new ResizeObserver(requestRender).observe(scene||canvas);
+  setView('iso');
 })();
