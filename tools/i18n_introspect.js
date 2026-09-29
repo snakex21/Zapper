@@ -29,13 +29,13 @@ const { text, packs } = loadI18n();
 const language = process.argv[2] || "";
 if (!language) {
   process.stdout.write(asciiJson({ text, packs }));
-  process.exit(0);
+} else {
+  const pack = packs[language] || {};
+  const missing = {};
+  for (const [key, pair] of Object.entries(text)) {
+    if (language === "en") continue;
+    if (language === "pl") continue;
+    if (!Object.prototype.hasOwnProperty.call(pack, key)) missing[key] = pair[1];
+  }
+  process.stdout.write(asciiJson({ language, missing, count: Object.keys(missing).length }));
 }
-const pack = packs[language] || {};
-const missing = {};
-for (const [key, pair] of Object.entries(text)) {
-  if (language === "en") continue;
-  if (language === "pl") continue;
-  if (!Object.prototype.hasOwnProperty.call(pack, key)) missing[key] = pair[1];
-}
-process.stdout.write(asciiJson({ language, missing, count: Object.keys(missing).length }));
