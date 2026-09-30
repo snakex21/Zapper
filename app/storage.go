@@ -223,6 +223,7 @@ func loadActiveProgress(directory string, config Config, now time.Time) (Progres
 		for sessionID, paused := range stored.PausedSessions {
 			result.PausedSessions[sessionID] = paused
 		}
+		result.PartialRuns = append(result.PartialRuns, stored.PartialRuns...)
 	}
 	return result, nil
 }

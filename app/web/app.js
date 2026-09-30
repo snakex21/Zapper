@@ -370,6 +370,9 @@ let selectedPhase = 0;
 let selectedPersonID = "";
 let editedPersonID = "";
 let validatedAIJSON = "";
+let validatedAIPersonID = "";
+let aiImportRevision = 0;
+let aiImportBusy = false;
 let lastAIContextPersons = [];
 let scheduleDays = 7;
 let toastTimer = null;
@@ -800,6 +803,7 @@ function bindStaticActions() {
   });
   document.getElementById("open-ai-tools").addEventListener("click", openAITools);
   document.getElementById("close-ai-tools").addEventListener("click", () => document.getElementById("ai-dialog").close());
+  document.getElementById("ai-dialog").addEventListener("close", () => invalidateAIImportPreview());
   document.getElementById("generate-ai-context").addEventListener("click", generateAIContext);
   document.getElementById("toggle-all-ai-persons").addEventListener("click", toggleAllAIPersons);
   document.getElementById("ai-person-pick").addEventListener("change", updateAISelectAllLabel);
@@ -812,9 +816,7 @@ function bindStaticActions() {
   document.getElementById("preview-ai-import").addEventListener("click", previewAIImport);
   document.getElementById("apply-ai-import").addEventListener("click", applyAIImport);
   document.getElementById("ai-import-input").addEventListener("input", () => {
-    validatedAIJSON = "";
-    document.getElementById("apply-ai-import").disabled = true;
-    document.getElementById("ai-import-preview").textContent = "JSON zmieniono — sprawdź go ponownie.";
+    invalidateAIImportPreview("JSON zmieniono — sprawdź go ponownie.");
   });
 }
 
@@ -1154,7 +1156,18 @@ async function savePersonName(event) {
   const updated = { ...person, name };
   await runAction(event.currentTarget, async () => {
     snapshot = await window.apiUpdatePerson(updated);
-    syncDraft();
+    if (profilesDirty && draftConfig) {
+      // Rename only the identity fields; keep unsaved phases and schedules.
+      for (const profile of draftConfig.profiles || []) {
+        if ((profile.person_id || profile.id) === updated.id) {
+          profile.name = updated.name;
+          profile.person_id = updated.id;
+        }
+      }
+      updateDirtyState();
+    } else {
+      syncDraft();
+    }
     renderAll();
     document.getElementById("person-edit-dialog").close();
     toast("Nazwa osoby została zapisana");
@@ -1228,8 +1241,7 @@ async function deleteEditedPerson(event) {
 
 function openAITools() {
   renderPersons();
-  validatedAIJSON = "";
-  document.getElementById("apply-ai-import").disabled = true;
+  invalidateAIImportPreview();
   document.getElementById("ai-copy-hint").hidden = true;
   selectAIStep("context");
   document.getElementById("ai-dialog").showModal();
@@ -1317,11 +1329,32 @@ function downloadAIContext() {
   toast(`Zapisano plik ${link.download}`);
 }
 
+function invalidateAIImportPreview(message = "") {
+  aiImportRevision += 1;
+  validatedAIJSON = "";
+  validatedAIPersonID = "";
+  const button = document.getElementById("apply-ai-import");
+  button.disabled = true;
+  button.classList.remove("is-confirming");
+  button.textContent = uiText("approveStart");
+  if (message) document.getElementById("ai-import-preview").textContent = message;
+  if (armedDelete === "apply-ai-profile") {
+    armedDelete = "";
+    clearTimeout(armedDeleteTimer);
+  }
+}
+
 async function previewAIImport(event) {
+  if (aiImportBusy || event.currentTarget.disabled) return;
   const raw = document.getElementById("ai-import-input").value.trim();
+  invalidateAIImportPreview();
+  const revision = aiImportRevision;
   await runAction(event.currentTarget, async () => {
     const preview = await window.apiPreviewAIProfile(raw);
+    // Editing, closing or reopening the dialog invalidates pending responses.
+    if (revision !== aiImportRevision || document.getElementById("ai-import-input").value.trim() !== raw) return;
     validatedAIJSON = raw;
+    validatedAIPersonID = preview.persons?.[0]?.person_id || "";
     document.getElementById("ai-import-preview").innerHTML = (preview.persons || []).map(person => `<div class="ai-import-preview-person">
       <strong>${escapeHTML(person.person_name)} · <code>${escapeHTML(person.person_id)}</code></strong>
       <span>${escapeHTML(uiFormat("dynProgramPhaseDays", { programs: person.program_count, phases: person.phase_count, days: person.total_days }))}</span>
@@ -1354,23 +1387,35 @@ function renderUnknownFieldsWarning(fields) {
 }
 
 async function applyAIImport(event) {
-  if (!validatedAIJSON) return;
+  if (!validatedAIJSON || aiImportBusy || event.currentTarget.disabled) return;
   const button = event.currentTarget;
   if (!armDestructive(button, "apply-ai-profile", uiText("startProgramConfirm"))) return;
-  await runAction(button, async () => {
-    snapshot = await window.apiApplyAIProfile(validatedAIJSON);
-    const parsedPayload = JSON.parse(validatedAIJSON.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
-    const importedPersonID = Array.isArray(parsedPayload) ? (parsedPayload[0] || {}).person_id : parsedPayload.person_id;
-    selectedPersonID = importedPersonID || selectedPersonID;
-    validatedAIJSON = "";
-    document.getElementById("ai-import-input").value = "";
-    document.getElementById("ai-import-preview").textContent = "Profil został zaimportowany.";
-    document.getElementById("apply-ai-import").disabled = true;
-    document.getElementById("ai-dialog").close();
-    syncDraft();
-    renderAll();
-    toast("Nowy program został rozpoczęty");
-  });
+  // Capture the exact approved payload and parsed identity before yielding.
+  const raw = validatedAIJSON;
+  const importedPersonID = validatedAIPersonID;
+  const input = document.getElementById("ai-import-input");
+  const previewButton = document.getElementById("preview-ai-import");
+  aiImportBusy = true;
+  input.readOnly = true;
+  previewButton.disabled = true;
+  try {
+    await runAction(button, async () => {
+      snapshot = await window.apiApplyAIProfile(raw);
+      selectedPersonID = importedPersonID || selectedPersonID;
+      invalidateAIImportPreview();
+      if (input.value.trim() === raw) input.value = "";
+      document.getElementById("ai-import-preview").textContent = "Profil został zaimportowany.";
+      document.getElementById("ai-dialog").close();
+      syncDraft();
+      renderAll();
+      toast("Nowy program został rozpoczęty");
+    });
+  } finally {
+    aiImportBusy = false;
+    input.readOnly = false;
+    previewButton.disabled = false;
+    button.disabled = !validatedAIJSON;
+  }
 }
 
 async function refreshDevicePorts(showConfirmation = false) {
@@ -1875,7 +1920,9 @@ function renderToday() {
     list.innerHTML = `<div class="empty-state"><strong>${escapeHTML(uiText("noProfilesYet"))}</strong><span>${escapeHTML(uiText("addFirstProfilePhase"))}</span></div>`;
     return;
   }
-  const sessionRows = sessionGroups.map(group => {
+  const todayRows = [];
+  const overdueRows = [];
+  sessionGroups.forEach(group => {
     const plan = group.actionPlan;
     const interactive = true;
     const done = group.done;
@@ -1897,7 +1944,7 @@ function renderToday() {
     const buttonLabel = done ? uiText("completedMark") : plan.available
       ? (group.total > 1 ? uiFormat("dynRunPart", { part: nextPart, total: group.total }) : uiText("markCompleted"))
       : (group.total > 1 ? uiFormat("dynPartWaiting", { part: nextPart, total: group.total }) : uiText("notYet"));
-    return `<article class="session-row ${done ? "is-done" : ""} ${group.overdue && !done ? "is-overdue" : ""} ${!plan.available && interactive ? "is-waiting" : ""}">
+    const row = `<article class="session-row ${done ? "is-done" : ""} ${group.overdue && !done ? "is-overdue" : ""} ${!plan.available && interactive ? "is-waiting" : ""}">
       <div class="session-avatar">${escapeHTML(initials(plan.profile_name))}</div>
       <div class="session-person">
         <strong>${escapeHTML(plan.profile_name)}</strong>
@@ -1913,6 +1960,8 @@ function renderToday() {
       </div>
       <div class="session-row-actions"><button class="done-button ${done ? "is-done" : ""}" data-session-done="${escapeAttribute(plan.session_id || "")}" data-done="${done}" data-out-of-order="${older > 0}" ${interactive && (plan.available || done) ? "" : "disabled"}>${buttonLabel}</button>${done ? "" : `<button class="button text-danger compact" data-dismiss-session-group="${escapeAttribute(plan.session_id || "")}">${uiText("dismissTerm")}</button>`}</div>
     </article>`;
+    // Keep backend ordering/eligibility within each group; never reinterpret dates here.
+    (group.overdue && !done ? overdueRows : todayRows).push(row);
   });
 
   const nonSessionRows = plans.filter(plan => plan.status !== "session").map(plan => `<article class="session-row">
@@ -1922,7 +1971,14 @@ function renderToday() {
     <div class="session-meta"><strong>${escapeHTML(plan.time || "-")}</strong><span class="status-tag">${escapeHTML(statusText(plan.status, false))}</span></div>
     <button class="done-button" disabled>${uiText("noSessionButton")}</button>
   </article>`);
-  list.innerHTML = [...sessionRows, ...nonSessionRows].join("");
+  const currentRows = [...todayRows, ...nonSessionRows];
+  list.innerHTML = `<section class="today-session-group" aria-labelledby="today-sessions-heading">
+    <h2 class="session-group-heading" id="today-sessions-heading">${escapeHTML(uiText("todaySessionsHeading"))}</h2>
+    ${currentRows.length ? currentRows.join("") : `<p class="session-group-empty">${escapeHTML(uiText("noTodaySessions"))}</p>`}
+  </section>${overdueRows.length ? `<section class="today-session-group overdue-session-group" aria-labelledby="overdue-sessions-heading">
+    <h2 class="session-group-heading" id="overdue-sessions-heading">${escapeHTML(uiText("overdueSessionsHeading"))} <span>${overdueRows.length}</span></h2>
+    ${overdueRows.join("")}
+  </section>` : ""}`;
 }
 
 // Zaległości potrafią urosnąć do dziesiątek pozycji czyszczonych po jednej dziennie,
@@ -1937,13 +1993,12 @@ function renderOverdueActions() {
     container.innerHTML = "";
     return;
   }
-  container.innerHTML = states.map(state => `<div class="overdue-banner">
+  container.innerHTML = `<p class="overdue-help">${escapeHTML(uiText("overdueHelp"))}</p><div class="overdue-profile-actions">${states.map(state => `<div class="overdue-banner">
     <div>
       <strong>${escapeHTML(uiFormat("dynProfileOverdueCount", { name: state.profile_name, count: state.overdue_count }))}</strong>
-      <span>${uiText("overdueHelp")}</span>
     </div>
     <button class="button text-danger" data-dismiss-overdue="${escapeAttribute(state.profile_id || "")}">${uiText("dismissOverdue")}</button>
-  </div>`).join("");
+  </div>`).join("")}</div>`;
 }
 
 function renderSchedule() {
