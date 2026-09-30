@@ -8,8 +8,8 @@
   const font = 'Segoe UI, Arial, sans-serif';
 
   const state = {
-    yaw: -0.22,
-    pitch: 0.34,
+    yaw: -0.34,
+    pitch: 0.52,
     zoom: 0.82,
     panX: 0,
     panY: 0,
@@ -17,14 +17,14 @@
     panning: false,
     lastX: 0,
     lastY: 0,
-    labels: true,
+    labels: false,
     autoFrame: true
   };
 
   const C = {
     bg: '#eef3f7', board: '#f8f7f1', boardEdge: '#b9c2c8', hole: '#566770',
-    nano: '#177cae', nanoEdge: '#0d587c', lcd: '#17864d', lcdEdge: '#0b5d35',
-    screen: '#183f9a', ky: '#171a1b', kyEdge: '#050606', metal: '#b9c1c5',
+    nano: '#176985', nanoEdge: '#084359', lcd: '#147250', lcdEdge: '#083d2a',
+    screen: '#183f9a', ky: '#25383a', kyEdge: '#111e21', metal: '#b9c1c5',
     darkMetal: '#646d72', gold: '#d7ae3f', black: '#222', red: '#d32f2f',
     green: '#2e7d32', blue: '#1565c0', orange: '#f39c12', purple: '#8e24aa',
     cyan: '#00838f', out: '#ef6c00', text: '#17202a', white: '#fff'
@@ -96,13 +96,14 @@
     ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
   }
   function wire(points, color, width=4){
-    const q=points.map(project);
+    const raised=points.map((p,i)=>i===0||i===points.length-1?p:v(p.x,p.y,p.z+Math.sin(i*Math.PI/(points.length-1))*34));
+    const q=raised.map(project);
     // Rounded bends keep the exact terminals and lanes, while reading as insulated cable.
     const path=()=>{
       ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y);
       for(let i=1;i<q.length-1;i++){
         const a=q[i-1],b=q[i],c=q[i+1];
-        const r=Math.min(10,Math.hypot(b.x-a.x,b.y-a.y)/3,Math.hypot(c.x-b.x,c.y-b.y)/3);
+        const r=Math.min(26,Math.hypot(b.x-a.x,b.y-a.y)/3,Math.hypot(c.x-b.x,c.y-b.y)/3);
         const ab=Math.hypot(b.x-a.x,b.y-a.y)||1,bc=Math.hypot(c.x-b.x,c.y-b.y)||1;
         ctx.lineTo(b.x+(a.x-b.x)*r/ab,b.y+(a.y-b.y)*r/ab);
         ctx.quadraticCurveTo(b.x,b.y,b.x+(c.x-b.x)*r/bc,b.y+(c.y-b.y)*r/bc);
@@ -110,9 +111,9 @@
       ctx.lineTo(q[q.length-1].x,q[q.length-1].y);
     };
     ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
-    path();ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=width+3;ctx.stroke();
-    path();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.shadowColor='rgba(28,47,63,.18)';ctx.shadowBlur=3;ctx.shadowOffsetY=2;ctx.stroke();
-    ctx.shadowColor='transparent';path();ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+    path();ctx.strokeStyle='rgba(36,53,63,.30)';ctx.lineWidth=width+2;ctx.shadowColor='rgba(28,47,63,.25)';ctx.shadowBlur=5;ctx.shadowOffsetY=5;ctx.stroke();
+    ctx.shadowColor='transparent';path();ctx.strokeStyle=color;ctx.lineWidth=width+.6;ctx.stroke();
+    ctx.translate(-.4,-.7);path();ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
   }
   function circle3(p, radius, fill, stroke, width=1){
     const q=project(p); const rr=Math.max(1,radius*q.s); ctx.beginPath(); ctx.arc(q.x,q.y,rr,0,Math.PI*2); if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}
@@ -148,7 +149,7 @@
     }
   }
   function silkText(p,text,opts={}){
-    if(!state.labels) return;
+    if(!state.labels){projectedText(p,text,(opts.size||8)/.65,opts.color||'#eef8fc',opts.align||'center');return;}
     const q=project(p); const size=(opts.size||8)*Math.min(1,Math.max(.55,q.s/.65));
     ctx.save();
     ctx.font=`800 ${size}px Consolas, monospace`;
@@ -161,22 +162,20 @@
     ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
   }
   function box(cx,cy,cz,w,h,d,front,side){
+    const bevel=Math.min(w,h)>80?6:Math.min(2,w*.12,h*.12);
     const x0=cx-w/2,x1=cx+w/2,y0=cy-h/2,y1=cy+h/2,z0=cz-d/2,z1=cz+d/2;
-    const faces=[
-      {p:[v(x0,y0,z0),v(x1,y0,z0),v(x1,y1,z0),v(x0,y1,z0)],c:side||front},
-      {p:[v(x0,y0,z1),v(x1,y0,z1),v(x1,y1,z1),v(x0,y1,z1)],c:front},
-      {p:[v(x0,y0,z0),v(x0,y1,z0),v(x0,y1,z1),v(x0,y0,z1)],c:side||front},
-      {p:[v(x1,y0,z0),v(x1,y1,z0),v(x1,y1,z1),v(x1,y0,z1)],c:side||front},
-      {p:[v(x0,y0,z0),v(x1,y0,z0),v(x1,y0,z1),v(x0,y0,z1)],c:side||front},
-      {p:[v(x0,y1,z0),v(x1,y1,z0),v(x1,y1,z1),v(x0,y1,z1)],c:side||front}
-    ];
-    faces.sort((a,b)=>a.p.reduce((s,p)=>s+rot(p).z,0)/a.p.length - b.p.reduce((s,p)=>s+rot(p).z,0)/b.p.length);
+    const outline=[[x0+bevel,y0],[x1-bevel,y0],[x1,y0+bevel],[x1,y1-bevel],[x1-bevel,y1],[x0+bevel,y1],[x0,y1-bevel],[x0,y0+bevel]];
+    const lower=outline.map(([x,y])=>v(x,y,z0)),upper=outline.map(([x,y])=>v(x,y,z1));
+    const faces=[{p:lower,c:side||front,f:.73},{p:upper,c:front,f:1}];
+    for(let i=0;i<8;i++)faces.push({p:[lower[i],lower[(i+1)%8],upper[(i+1)%8],upper[i]],c:side||front,f:.7+.22*(1+Math.cos(i*Math.PI/4))/2});
+    faces.sort((a,b)=>a.p.reduce((s,p)=>s+rot(p).z,0)/a.p.length-b.p.reduce((s,p)=>s+rot(p).z,0)/b.p.length);
     for(const face of faces){
-      const q=face.p.map(project),ys=q.map(p=>p.y);
-      const grad=ctx.createLinearGradient(0,Math.min(...ys),0,Math.max(...ys)+1);
-      grad.addColorStop(0,face.c);grad.addColorStop(1,shade(face.c,.86));
-      poly(face.p,grad,'rgba(20,38,48,.18)',.7);
+      const q=face.p.map(project),xs=q.map(p=>p.x),ys=q.map(p=>p.y);
+      const grad=ctx.createLinearGradient(Math.min(...xs),Math.min(...ys),Math.max(...xs)+1,Math.max(...ys)+1);
+      grad.addColorStop(0,shade(face.c,Math.min(1,face.f+.08)));grad.addColorStop(.45,shade(face.c,face.f));grad.addColorStop(1,shade(face.c,face.f*.78));
+      poly(face.p,grad,'rgba(13,27,34,.3)',.65);
     }
+    line([...upper,upper[0]],'rgba(255,255,255,.18)',.65);
   }
 
   function shade(hex,factor){
@@ -190,8 +189,34 @@
     poly(top,color,'#657680',1);
     poly(ring(z+depth+.5).map(p=>v(cx+(p.x-cx)*.8,cy+(p.y-cy)*.8,p.z)),shade(color,.92),'#ffffff66',1);
   }
+  function footprint(cx,cy,z,w,h){
+    const corners=[v(cx-w/2,cy-h/2,z),v(cx+w/2,cy-h/2,z),v(cx+w/2,cy+h/2,z),v(cx-w/2,cy+h/2,z)];
+    ctx.save();ctx.filter='blur(12px)';ctx.shadowColor='rgba(24,43,57,.20)';ctx.shadowBlur=24;ctx.shadowOffsetY=9;
+    poly(corners,'rgba(30,49,62,.10)',null);ctx.restore();
+  }
+  function solder(p,r=6){
+    circle3(p,r,'#b9c4c8','#64777e',.7);
+    circle3(v(p.x-1,p.y-1,p.z+.1),r*.68,'#e3e9e8',null);
+    circle3(v(p.x,p.y,p.z+.2),r*.36,'#596b72',null);
+  }
+  function smd(x,y,z,w=15,h=7){
+    box(x,y,z,w+5,h,4,'#bac3bf','#64716e');
+    box(x,y,z+1,w-3,h,5,'#c2aa79','#746543');
+  }
+  function circuitTrace(points,color='rgba(132,197,187,.19)'){
+    line(points,color,1.1);
+    for(const p of [points[0],points[points.length-1]])circle3(p,2.2,color,null);
+  }
+  function projectedText(p,text,size,color,align='center'){
+    const q=project(p),x=project(v(p.x+1,p.y,p.z)),y=project(v(p.x,p.y+1,p.z));
+    const facing=rot(v(0,0,1)).z>=0?1:-1;
+    ctx.save();ctx.transform((x.x-q.x)*facing,(x.y-q.y)*facing,y.x-q.x,y.y-q.y,q.x,q.y);
+    ctx.font=`600 ${size}px ${font}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(text,0,0);ctx.restore();
+  }
   function drawBreadboard(){
-    box(0,0,-5,B.w,B.h,10,C.board,C.boardEdge);
+    box(0,0,-14,B.w,B.h,28,C.board,C.boardEdge);
+    // Moulded edge and individual recessed sockets, without changing the A–J grid.
+    for(const x of [-164,164])line([v(x,-300,1),v(x,300,1)],'#ffffff',1.5);
     // central trench
     poly([v(-17,B.y+10,2),v(17,B.y+10,2),v(17,B.y+B.h-10,2),v(-17,B.y+B.h-10,2)], '#d9d6cb', '#bdb9ad');
 
@@ -208,12 +233,21 @@
 
     // holes
     for(let r=1;r<=30;r++){
-      for(const l of letters){ circle3(v(colX[l],rowY(r),6),3.2,C.hole,'#69757a',0.5); }
+      for(const l of letters){
+        const x=colX[l],y=rowY(r);
+        poly([v(x-5,y-4,2),v(x+5,y-4,2),v(x+5,y+4,2),v(x-5,y+4,2)],'#bcc3c4','#fffdfa',.6);
+        poly([v(x-2.7,y-2,3),v(x+2.7,y-2,3),v(x+2.7,y+2,3),v(x-2.7,y+2,3)],'#4d5b60',null);
+      }
     }
     // labels
-    for(const l of letters) label(v(colX[l],B.y-1,8),l,{size:11,bg:'rgba(255,255,255,.88)',dy:-7});
+    for(const l of letters){
+      projectedText(v(colX[l],B.y+8,5),l,11,'#7b8b90');
+      label(v(colX[l],B.y-1,8),l,{size:11,bg:'rgba(255,255,255,.88)',dy:-7});
+    }
     for(let r=1;r<=30;r+=1){
       if(r===1||r===2||r===5||r===9||r===10||r===11||r===12||r===13||r===15||r===16||r%5===0){
+        projectedText(v(B.x+9,rowY(r),5),String(r),9,'#7b8b90');
+        projectedText(v(B.x+B.w-9,rowY(r),5),String(r),9,'#7b8b90');
         label(v(B.x-12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:-10});
         label(v(B.x+B.w+12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:10});
       }
@@ -257,20 +291,37 @@
 
   function drawNano(){
     const cx=14, cy=rowY(9), z=25, w=148, h=315;
-    box(cx,cy,z,w,h,18,C.nano,C.nanoEdge);
+    box(cx,cy,z,w,h,14,C.nano,C.nanoEdge);
+    for(const x of [colX.D,colX.H])box(x,cy,17,15,302,16,'#253239','#0b151c');
+    for(let i=0;i<6;i++){
+      const y=cy-88+i*25;
+      circuitTrace([v(cx-46,y,z+8),v(cx-24,y,z+8),v(cx-10,y+14,z+8)],'rgba(77,175,186,.3)');
+      circuitTrace([v(cx+48,y+10,z+8),v(cx+30,y+10,z+8),v(cx+17,y-3,z+8)],'rgba(77,175,186,.26)');
+    }
+    for(const x of [cx-50,cx+50])for(const y of [cy-140,cy+140])solder(v(x,y,z+9),5);
+    for(let i=0;i<3;i++){smd(cx-12+i*17,cy-66,z+12,8,6);smd(cx+35,cy+84+i*16,z+12,10,6);}
+    box(cx-23,cy+108,z+13,17,25,8,'#263238','#10191d');
+    projectedText(v(cx,cy+148,z+10),'NANO',17,'#c9e1e4');
     // USB
-    box(cx,rowY(1)+10,z+18,62,42,30,'#cfd8dc','#8c979c');
+    box(cx,rowY(1)+10,z+18,62,42,30,'#d7e0e4','#7b8e99');
+    box(cx,rowY(1)-8,z+18,47,4,17,'#202e38','#101923');
+    line([v(cx-22,rowY(1)-11,z+29),v(cx+22,rowY(1)-11,z+29)],'#f1f5f4',1.4);
+    for(const dx of [-20,20])box(cx+dx,rowY(1)+17,z+34,7,12,1,'#899aa2','#71818b');
     label(v(cx,rowY(1)+10,z+36),'USB',{size:11,bg:'#dfe5e8'});
     // MCU and reset
-    box(cx,cy+20,z+20,58,76,8,'#20272b','#111');
+    for(let i=0;i<8;i++)for(const dx of [-34,34])box(cx+dx,cy-11+i*9,z+15,13,4,4,'#c6d1d2','#60747c');
+    for(let i=0;i<6;i++)for(const dy of [-24,64])box(cx-23+i*9,cy+dy,z+15,4,13,4,'#c6d1d2','#60747c');
+    box(cx,cy+20,z+20,58,76,8,'#303a3c','#111b20');
+    projectedText(v(cx,cy+15,z+25),'ATMEGA',8,'#93a2a3');
+    projectedText(v(cx,cy+28,z+25),'328P',10,'#93a2a3');
+    circle3(v(cx-20,cy-8,z+25),2,'#77888d',null);
     circle3(v(-28,cy+125,z+30),8,'#d7dde0','#657176',1);
     label(v(cx,cy+150,z+30),'ARDUINO NANO',{size:15,bg:'rgba(18,96,132,.9)',color:'#fff',stroke:'#0d587c'});
     // pins and pin names
     for(let i=0;i<15;i++){
       const r=i+2, y=rowY(r);
       // Nano ma rozstaw 0.6 cala; przy lewym rzędzie w D prawa listwa wypada w H.
-      box(colX.D,y,15,10,10,30,C.metal,C.darkMetal);
-      box(colX.H,y,15,10,10,30,C.metal,C.darkMetal);
+      for(const x of [colX.D,colX.H]){solder(v(x,y,34),6);box(x,y,20,4,4,36,C.gold,'#897138');}
       silkText(v(colX.D+16,y,36),leftPins[i],{size:7,align:'left'});
       silkText(v(colX.H-16,y,36),rightPins[i],{size:7,align:'right'});
     }
@@ -280,8 +331,8 @@
     const x=colX.I, y1=rowY(1), y5=rowY(5), z=28;
 
     // Nóżki naprawdę wchodzą w i5 oraz i1.
-    line([v(x,y5,8),v(x,y5-18,z)],C.out,3);
-    line([v(x,y1+18,z),v(x,y1,8)],C.out,3);
+    line([v(x,y5,8),v(x,y5-18,z)],'#a8b9bf',3);
+    line([v(x,y1+18,z),v(x,y1,8)],'#a8b9bf',3);
     box(x,(y1+y5)/2,z,22,50,20,'#d9bd8b','#6d4c41');
     for(const off of [-14,0,14]){
       line([v(x-11,(y1+y5)/2+off,z+11),v(x+11,(y1+y5)/2+off,z+11)],off===0?'#d32f2f':'#6d4c41',3);
@@ -302,25 +353,36 @@
   }
 
   function drawClip(p,color,text){
-    const q=project(p); const s=Math.max(.55,q.s);
-    ctx.save(); ctx.translate(q.x,q.y); ctx.scale(s,s);
-    ctx.fillStyle=color; ctx.strokeStyle='#111'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(-34,-10); ctx.lineTo(25,-14); ctx.lineTo(48,0); ctx.lineTo(25,14); ctx.lineTo(-34,10); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font='700 9px Segoe UI'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,2,0); ctx.restore();
+    // Sleeve begins at x-55, the unchanged wire terminal, with metal jaws beyond it.
+    box(p.x-22,p.y,p.z,66,23,20,color,shade(color,.65));
+    box(p.x+17,p.y,p.z,20,16,13,'#bcc8ce','#607782');
+    poly([v(p.x+17,p.y-8,p.z+7),v(p.x+49,p.y-3,p.z+7),v(p.x+41,p.y+3,p.z+7),v(p.x+17,p.y+8,p.z+7)],'#d6dfe2','#607782',.8);
+    poly([v(p.x+17,p.y-7,p.z-4),v(p.x+43,p.y-1,p.z-4),v(p.x+49,p.y+3,p.z-4),v(p.x+17,p.y+8,p.z-4)],'#8a9fa9','#4f6572',.8);
+    line([v(p.x+22,p.y+2,p.z+1),v(p.x+44,p.y+1,p.z+1)],'#354b58',1);
+    for(let i=0;i<4;i++)line([v(p.x-41+i*11,p.y-9,p.z+11),v(p.x-41+i*11,p.y+9,p.z+11)],'rgba(255,255,255,.15)',1);
+    projectedText(v(p.x-23,p.y,p.z+11),text,8,'#fff');
   }
 
   function drawLCD(){
     const cx=-520, cy=-80, z=125, w=340, h=172;
+    // Underside header leads remain connected to the same I2C terminals in front view.
+    for(let i=0;i<4;i++){
+      const px=cx+122-39+i*26,py=cy+6+56;
+      box(px,py,z-35,5,5,58,C.gold,'#716034');
+      box(px,py,z-59,13,15,14,'#2f3d42','#121f25');
+    }
     box(cx,cy,z,w,h,12,C.lcd,C.lcdEdge);
     const frontVisible=rot(v(0,0,1)).z>=0;
-    for(const dx of [-w/2+13,w/2-13]) for(const dy of [-h/2+13,h/2-13]) circle3(v(cx+dx,cy+dy,z+8),5,'#e4ecdd','#516f60',1.5);
+    for(const dx of [-w/2+13,w/2-13]) for(const dy of [-h/2+13,h/2-13]) solder(v(cx+dx,cy+dy,z+8),6);
+    for(let i=0;i<16;i++)solder(v(cx-110+i*14,cy-h/2+9,z+8),3.1);
     if(frontVisible){
-      box(cx,cy-5,z+10,w-42,h-48,10,'#253746','#12212d');
+      box(cx,cy-5,z+16,w-42,h-48,23,'#263746','#102331');
       poly([v(cx-w/2+28,cy-h/2+28,z+9),v(cx+w/2-28,cy-h/2+28,z+9),v(cx+w/2-28,cy+h/2-38,z+9),v(cx-w/2+28,cy+h/2-38,z+9)],'#1e4d95','#101f34',2);
       for(let row=0;row<2;row++)for(let col=0;col<16;col++){
         const x=cx-124+col*16,y=cy-36+row*31;
         poly([v(x,y,z+17),v(x+11,y,z+17),v(x+11,y+22,z+17),v(x,y+22,z+17)],'rgba(129,181,255,.12)',null);
       }
+      projectedText(v(cx,cy+65,z+9),'LCD1602  ·  I2C',14,'#d0e7d7');
       label(v(cx,cy+46,z+14),'LCD1602 16×2',{size:13,bg:'rgba(23,134,77,.9)',color:'#fff',stroke:C.lcdEdge});
     }
     // back I2C adapter and header are visible when the model is turned around
@@ -360,11 +422,28 @@
 
   function drawKY(){
     const cx=535, cy=-55, z=130, w=235, h=250;
-    box(cx,cy,z,w,h,12,C.ky,C.kyEdge);
+    for(let i=0;i<5;i++){
+      const px=cx-78+i*39,py=cy+104;
+      box(px,py,z-37,5,5,60,C.gold,'#716034');
+      box(px,py,z-61,14,16,14,'#2f3d42','#121f25');
+    }
+    box(cx,cy,z,w,h,14,C.ky,C.kyEdge);
+    for(const dx of [-w/2+17,w/2-17])for(const dy of [-h/2+17,h/2-17])solder(v(cx+dx,cy+dy,z+8),7);
     const frontVisible=rot(v(0,0,1)).z>=0;
     if(frontVisible){
-      cylinder(cx,cy-32,z+8,52,18,'#84939d');
-      cylinder(cx,cy-32,z+26,27,38,'#c1cbd1');
+      box(cx,cy-32,z+25,135,125,35,'#b9c5c9','#617782');
+      for(const dx of [-55,55])box(cx+dx,cy-32,z+45,9,81,5,'#8e9fa7','#516773');
+      cylinder(cx,cy-32,z+43,46,12,'#c1cbd1');
+      cylinder(cx,cy-32,z+55,25,48,'#c1cbd1');
+      line([v(cx-16,cy-32,z+104),v(cx+16,cy-32,z+104)],'#6f838e',2);
+      for(let i=0;i<3;i++)smd(cx-49+i*48,cy+57,z+13,20,10);
+      projectedText(v(cx,cy+81,z+9),'KY-040',18,'#e0e8df');
+      const faceNames=['GND','+','SW','DT','CLK'];
+      for(let i=0;i<5;i++){
+        const x=cx-78+i*39;solder(v(x,cy+104,z+9),5);
+        projectedText(v(x,cy+91,z+10),faceNames[i],8,'#c4d8d1');
+        circuitTrace([v(x,cy+102,z+8),v(x,cy+68,z+8),v(cx+(i-2)*19,cy+43,z+8)]);
+      }
       label(v(cx,cy+65,z+18),'KY-040',{size:14,bg:'rgba(20,20,20,.9)',color:'#fff',stroke:'#444'});
     }
     // Tył KY-040: pola lutownicze, plastikowa listwa i wystające goldpiny.
@@ -456,11 +535,12 @@
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,cssW,cssH);
     const background=ctx.createRadialGradient(cssW*.45,cssH*.4,10,cssW*.5,cssH*.5,cssW*.75);
-    background.addColorStop(0,'#ffffff');background.addColorStop(1,'#e4edf3');
+    background.addColorStop(0,'#fbfcfb');background.addColorStop(.65,'#eef2f3');background.addColorStop(1,'#d9e3e8');
     ctx.fillStyle=background;ctx.fillRect(0,0,cssW,cssH);
-    ctx.fillStyle='rgba(111,140,159,.16)';
-    for(let x=24;x<cssW;x+=24)for(let y=100;y<cssH;y+=24){ctx.beginPath();ctx.arc(x,y,.7,0,Math.PI*2);ctx.fill();}
     labelQueue=[];
+    footprint(12,16,-43,B.w+4,B.h+4);
+    footprint(-498,-49,-40,340,172);
+    footprint(557,-24,-40,235,250);
     drawBreadboard();
     drawNano();
     const lcd=drawLCD();
@@ -489,7 +569,7 @@
       state.panX=rect.width/2-target.x;state.panY=rect.height/2-target.y; }
     else {
       // Lekka perspektywa pokazuje grubość płytek; widok z góry pozostaje płaski.
-      state.yaw=-.22; state.pitch=.34; state.zoom=.82; state.panX=0; state.panY=0; state.autoFrame=true;
+      state.yaw=-.34; state.pitch=.52; state.zoom=.82; state.panX=0; state.panY=0; state.autoFrame=true;
     }
     render();
   }
