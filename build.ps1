@@ -30,6 +30,10 @@ Write-Host "Testy widoku 3D..."
 node .\tools\check_wiring3d.js
 if ($LASTEXITCODE -ne 0) { throw "Testy widoku 3D nie przeszly." }
 
+Write-Host "Testy ukladu Dzisiaj..."
+node --test .\tools\check_today_layout.js
+if ($LASTEXITCODE -ne 0) { throw "Testy ukladu Dzisiaj nie przeszly." }
+
 Write-Host "Audyt komunikatow aktualizatora 30/30..."
 node .\tools\check_update_i18n.js
 if ($LASTEXITCODE -ne 0) { throw "Audyt tlumaczen aktualizatora nie przeszedl." }

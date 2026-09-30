@@ -1920,7 +1920,9 @@ function renderToday() {
     list.innerHTML = `<div class="empty-state"><strong>${escapeHTML(uiText("noProfilesYet"))}</strong><span>${escapeHTML(uiText("addFirstProfilePhase"))}</span></div>`;
     return;
   }
-  const sessionRows = sessionGroups.map(group => {
+  const todayRows = [];
+  const overdueRows = [];
+  sessionGroups.forEach(group => {
     const plan = group.actionPlan;
     const interactive = true;
     const done = group.done;
@@ -1942,7 +1944,7 @@ function renderToday() {
     const buttonLabel = done ? uiText("completedMark") : plan.available
       ? (group.total > 1 ? uiFormat("dynRunPart", { part: nextPart, total: group.total }) : uiText("markCompleted"))
       : (group.total > 1 ? uiFormat("dynPartWaiting", { part: nextPart, total: group.total }) : uiText("notYet"));
-    return `<article class="session-row ${done ? "is-done" : ""} ${group.overdue && !done ? "is-overdue" : ""} ${!plan.available && interactive ? "is-waiting" : ""}">
+    const row = `<article class="session-row ${done ? "is-done" : ""} ${group.overdue && !done ? "is-overdue" : ""} ${!plan.available && interactive ? "is-waiting" : ""}">
       <div class="session-avatar">${escapeHTML(initials(plan.profile_name))}</div>
       <div class="session-person">
         <strong>${escapeHTML(plan.profile_name)}</strong>
@@ -1958,6 +1960,8 @@ function renderToday() {
       </div>
       <div class="session-row-actions"><button class="done-button ${done ? "is-done" : ""}" data-session-done="${escapeAttribute(plan.session_id || "")}" data-done="${done}" data-out-of-order="${older > 0}" ${interactive && (plan.available || done) ? "" : "disabled"}>${buttonLabel}</button>${done ? "" : `<button class="button text-danger compact" data-dismiss-session-group="${escapeAttribute(plan.session_id || "")}">${uiText("dismissTerm")}</button>`}</div>
     </article>`;
+    // Keep backend ordering/eligibility within each group; never reinterpret dates here.
+    (group.overdue && !done ? overdueRows : todayRows).push(row);
   });
 
   const nonSessionRows = plans.filter(plan => plan.status !== "session").map(plan => `<article class="session-row">
@@ -1967,7 +1971,14 @@ function renderToday() {
     <div class="session-meta"><strong>${escapeHTML(plan.time || "-")}</strong><span class="status-tag">${escapeHTML(statusText(plan.status, false))}</span></div>
     <button class="done-button" disabled>${uiText("noSessionButton")}</button>
   </article>`);
-  list.innerHTML = [...sessionRows, ...nonSessionRows].join("");
+  const currentRows = [...todayRows, ...nonSessionRows];
+  list.innerHTML = `<section class="today-session-group" aria-labelledby="today-sessions-heading">
+    <h2 class="session-group-heading" id="today-sessions-heading">${escapeHTML(uiText("todaySessionsHeading"))}</h2>
+    ${currentRows.length ? currentRows.join("") : `<p class="session-group-empty">${escapeHTML(uiText("noTodaySessions"))}</p>`}
+  </section>${overdueRows.length ? `<section class="today-session-group overdue-session-group" aria-labelledby="overdue-sessions-heading">
+    <h2 class="session-group-heading" id="overdue-sessions-heading">${escapeHTML(uiText("overdueSessionsHeading"))} <span>${overdueRows.length}</span></h2>
+    ${overdueRows.join("")}
+  </section>` : ""}`;
 }
 
 // Zaległości potrafią urosnąć do dziesiątek pozycji czyszczonych po jednej dziennie,
@@ -1982,13 +1993,12 @@ function renderOverdueActions() {
     container.innerHTML = "";
     return;
   }
-  container.innerHTML = states.map(state => `<div class="overdue-banner">
+  container.innerHTML = `<p class="overdue-help">${escapeHTML(uiText("overdueHelp"))}</p><div class="overdue-profile-actions">${states.map(state => `<div class="overdue-banner">
     <div>
       <strong>${escapeHTML(uiFormat("dynProfileOverdueCount", { name: state.profile_name, count: state.overdue_count }))}</strong>
-      <span>${uiText("overdueHelp")}</span>
     </div>
     <button class="button text-danger" data-dismiss-overdue="${escapeAttribute(state.profile_id || "")}">${uiText("dismissOverdue")}</button>
-  </div>`).join("");
+  </div>`).join("")}</div>`;
 }
 
 function renderSchedule() {

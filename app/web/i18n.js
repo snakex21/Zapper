@@ -52,6 +52,7 @@
     aiJsonPlaceholder: ["Wklej tutaj odpowiedź AI: pojedynczy obiekt JSON albo tablicę obiektów — po jednym na osobę.", "Paste the AI response here: one JSON object or an array of objects — one per person."],
     personExample: ["np. Tomek", "e.g. Tom"], idExample: ["np. tomek", "e.g. tom"], multiPersonExample: ["np. Maks, Ania\nOla = ola_2026\nJedno imię w linii lub po przecinku", "e.g. Max, Anna\nOla = ola_2026\nOne name per line or comma-separated"],
     boardDisconnected: ["Płytka niepołączona", "Board disconnected"], planToday: ["PLAN NA DZIŚ", "TODAY'S PLAN"],
+    todaySessionsHeading: ["Na dziś", "Today"], overdueSessionsHeading: ["Zaległe", "Overdue"],
     dailyPlan: ["Dzienny plan", "Daily plan"], loadingPlan: ["Ładowanie planu…", "Loading plan…"], day: ["Dzień", "Day"],
     planStart: ["Początek planu", "Plan start"], planDateHelp: ["Ta data wyznacza dzień fazy dla wszystkich profili.", "This date determines the phase day for all profiles."],
     saveDate: ["Zapisz datę", "Save date"], resetProgress: ["Resetuj postęp", "Reset progress"],

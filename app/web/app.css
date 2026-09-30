@@ -551,16 +551,18 @@ tbody tr:hover { background: rgba(255,255,255,.8); }
 }
 
 /* Baner zaległości w widoku Dzisiaj — jawne domknięcie porzuconego programu. */
-.overdue-actions:not(:empty) { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
+.overdue-actions:not(:empty) { margin: 10px 0 12px; padding: 10px 14px; border: 1px solid var(--warning); border-radius: 10px; background: #fdf6e8; }
+.overdue-help { margin: 0 0 6px; color: var(--ink-soft); font-size: clamp(12px, .82vw, 13px); line-height: 1.45; }
+.overdue-profile-actions { display: flex; flex-wrap: wrap; gap: 4px 24px; }
 .overdue-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 16px;
-  border: 1px solid var(--warning);
-  border-radius: 10px;
-  background: #fdf6e8;
+  flex: 1 1 320px;
+  min-width: 0;
+  flex-wrap: wrap;
+  padding: 2px 0;
 }
 .overdue-banner strong { display: block; color: var(--ink); font-size: clamp(13px, .95vw, 15px); }
 .overdue-banner span { display: block; margin-top: 3px; color: var(--ink-soft); font-size: clamp(12px, .82vw, 13px); }
@@ -569,3 +571,14 @@ tbody tr:hover { background: rgba(255,255,255,.8); }
 /* Wpisy historii, które NIE są wykonaniem zaplanowanej sesji. */
 tr.is-manual td, tr.is-dismissed td { color: var(--ink-soft); font-style: italic; }
 tr.is-dismissed td { text-decoration-color: var(--danger); }
+
+/* Focused Today layout: keep navigation and other pages at their existing size. */
+.today-heading-row { margin-bottom: 14px; gap: 16px; }
+.today-heading-row h1 { margin: 3px 0 5px; font-size: clamp(26px, 2.3vw, 34px); }
+.today-heading-row .day-number strong { font-size: 38px; }
+.today-heading-row .day-number { min-width: 64px; }
+.today-session-group + .today-session-group { margin-top: 18px; }
+.session-group-heading { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 4px; font-size: 16px; color: var(--accent-dark); border-bottom: 1px solid var(--line); }
+.session-group-heading span { font-size: 13px; font-weight: 600; }
+.overdue-session-group .session-group-heading { color: #815b1e; }
+.session-group-empty { margin: 0; padding: 10px 4px; font-size: 14px; color: var(--ink-soft); }
