@@ -2,11 +2,14 @@
   const canvas = document.getElementById('wiring3dCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
   const scene = document.getElementById('wiring3dScene');
+  let labelQueue = [];
+  const font = 'Segoe UI, Arial, sans-serif';
 
   const state = {
-    yaw: 0,
-    pitch: 0,
+    yaw: -0.22,
+    pitch: 0.34,
     zoom: 0.82,
     panX: 0,
     panY: 0,
@@ -19,7 +22,7 @@
   };
 
   const C = {
-    bg: '#f5f8f9', board: '#f2f0e7', boardEdge: '#c9c6ba', hole: '#8f9aa0',
+    bg: '#eef3f7', board: '#f8f7f1', boardEdge: '#b9c2c8', hole: '#566770',
     nano: '#177cae', nanoEdge: '#0d587c', lcd: '#17864d', lcdEdge: '#0b5d35',
     screen: '#183f9a', ky: '#171a1b', kyEdge: '#050606', metal: '#b9c1c5',
     darkMetal: '#646d72', gold: '#d7ae3f', black: '#222', red: '#d32f2f',
@@ -53,7 +56,7 @@
     const d=Math.max(260,1100 - r.z);
     const rect=canvas.getBoundingClientRect();
     // Automatyczne dopasowanie do mniejszych okien. Zoom użytkownika działa dalej ponad tym skalowaniem.
-    const responsiveFit=Math.max(.48,Math.min(1,Math.min(rect.width/1180,rect.height/760)));
+    const responsiveFit=Math.max(.1,Math.min(1,Math.min(rect.width/1180,rect.height/760)));
     const s=(f/d)*state.zoom*responsiveFit;
     return { x: rect.width/2 + state.panX + r.x*s, y: rect.height/2 + state.panY + r.y*s, z:r.z, s };
   }
@@ -94,30 +97,63 @@
   }
   function wire(points, color, width=4){
     const q=points.map(project);
-    ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y); for(let i=1;i<q.length;i++) ctx.lineTo(q[i].x,q[i].y);
-    ctx.strokeStyle='rgba(255,255,255,.88)'; ctx.lineWidth=width+4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y); for(let i=1;i<q.length;i++) ctx.lineTo(q[i].x,q[i].y);
-    ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+    // Rounded bends keep the exact terminals and lanes, while reading as insulated cable.
+    const path=()=>{
+      ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y);
+      for(let i=1;i<q.length-1;i++){
+        const a=q[i-1],b=q[i],c=q[i+1];
+        const r=Math.min(10,Math.hypot(b.x-a.x,b.y-a.y)/3,Math.hypot(c.x-b.x,c.y-b.y)/3);
+        const ab=Math.hypot(b.x-a.x,b.y-a.y)||1,bc=Math.hypot(c.x-b.x,c.y-b.y)||1;
+        ctx.lineTo(b.x+(a.x-b.x)*r/ab,b.y+(a.y-b.y)*r/ab);
+        ctx.quadraticCurveTo(b.x,b.y,b.x+(c.x-b.x)*r/bc,b.y+(c.y-b.y)*r/bc);
+      }
+      ctx.lineTo(q[q.length-1].x,q[q.length-1].y);
+    };
+    ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+    path();ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=width+3;ctx.stroke();
+    path();ctx.strokeStyle=color;ctx.lineWidth=width;ctx.shadowColor='rgba(28,47,63,.18)';ctx.shadowBlur=3;ctx.shadowOffsetY=2;ctx.stroke();
+    ctx.shadowColor='transparent';path();ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
   }
   function circle3(p, radius, fill, stroke, width=1){
     const q=project(p); const rr=Math.max(1,radius*q.s); ctx.beginPath(); ctx.arc(q.x,q.y,rr,0,Math.PI*2); if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}
   }
   function label(p, text, opts={}){
-    if(!state.labels) return;
-    const q=project(p); const size=opts.size||13; ctx.font=`${opts.bold===false?'500':'700'} ${size}px Segoe UI, Arial`;
-    const pad=5, w=ctx.measureText(text).width + pad*2, h=size+8;
-    let x=q.x + (opts.dx||0), y=q.y + (opts.dy||0);
-    ctx.fillStyle=opts.bg||'rgba(255,255,255,.94)'; ctx.strokeStyle=opts.stroke||'#cfd8dc'; ctx.lineWidth=1;
-    roundRect(x-w/2,y-h/2,w,h,5); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=opts.color||C.text; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,x,y+0.5);
+    if(state.labels) labelQueue.push({p,text,opts});
+  }
+  function drawLabels(){
+    const occupied=[],rect=canvas.getBoundingClientRect();
+    // Remove labels from the second geometry pass, then place callouts only once.
+    const seen=new Set();
+    for(const {p,text,opts} of labelQueue){
+      const key=text+JSON.stringify(p);if(seen.has(key))continue;seen.add(key);
+      const q=project(p),size=Math.max(7,(opts.size||13)*Math.min(1,rect.width/950));
+      if(q.x < -20 || q.x > rect.width+20 || q.y < 80 || q.y > rect.height+20)continue;
+      ctx.font=`${opts.bold===false?'500':'600'} ${size}px ${font}`;
+      const w=ctx.measureText(text).width+12,h=size+10;
+      const desiredX=q.x+(opts.dx||0),desiredY=q.y+(opts.dy||0);
+      let x=Math.max(w/2+8,Math.min(rect.width-w/2-8,desiredX)),y=desiredY;
+      const collides=()=>occupied.some(r=>Math.abs(x-r.x)<(w+r.w)/2+3&&Math.abs(y-r.y)<(h+r.h)/2+3);
+      // Compact row/column coordinates stay anchored; callouts can move with a leader.
+      if(text.length>2){for(let i=0;i<20&&collides();i++)y=desiredY+(i%2?1:-1)*(Math.floor(i/2)+1)*(h+3);}
+      y=Math.max(96+h/2,Math.min(rect.height-h/2-10,y));
+      if(text.length>2) occupied.push({x,y,w,h});
+      if(Math.abs(x-q.x)>22||Math.abs(y-q.y)>22){
+        ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(x,y);ctx.strokeStyle=opts.stroke||'#9eafb9';ctx.lineWidth=.8;ctx.stroke();
+        ctx.beginPath();ctx.arc(q.x,q.y,2,0,Math.PI*2);ctx.fillStyle=opts.stroke||'#8196a4';ctx.fill();
+      }
+      ctx.save();ctx.shadowColor='rgba(23,43,60,.09)';ctx.shadowBlur=5;ctx.shadowOffsetY=2;
+      ctx.fillStyle=opts.bg||'rgba(255,255,255,.97)';ctx.strokeStyle=opts.stroke||'#d5dfe5';ctx.lineWidth=.8;
+      roundRect(x-w/2,y-h/2,w,h,5);ctx.fill();ctx.shadowColor='transparent';ctx.stroke();ctx.restore();
+      ctx.fillStyle=opts.color||C.text;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y+.5);
+    }
   }
   function silkText(p,text,opts={}){
     if(!state.labels) return;
-    const q=project(p); const size=opts.size||8;
+    const q=project(p); const size=(opts.size||8)*Math.min(1,Math.max(.55,q.s/.65));
     ctx.save();
     ctx.font=`800 ${size}px Consolas, monospace`;
     ctx.textAlign=opts.align||'center'; ctx.textBaseline='middle';
-    ctx.lineWidth=2.4; ctx.strokeStyle='rgba(0,0,0,.42)'; ctx.strokeText(text,q.x+(opts.dx||0),q.y+(opts.dy||0));
+    ctx.lineWidth=1.4; ctx.strokeStyle='rgba(0,0,0,.22)'; ctx.strokeText(text,q.x+(opts.dx||0),q.y+(opts.dy||0));
     ctx.fillStyle=opts.color||'#eef8fc'; ctx.fillText(text,q.x+(opts.dx||0),q.y+(opts.dy||0));
     ctx.restore();
   }
@@ -135,9 +171,25 @@
       {p:[v(x0,y1,z0),v(x1,y1,z0),v(x1,y1,z1),v(x0,y1,z1)],c:side||front}
     ];
     faces.sort((a,b)=>a.p.reduce((s,p)=>s+rot(p).z,0)/a.p.length - b.p.reduce((s,p)=>s+rot(p).z,0)/b.p.length);
-    for(const face of faces) poly(face.p,face.c,'#0000002b');
+    for(const face of faces){
+      const q=face.p.map(project),ys=q.map(p=>p.y);
+      const grad=ctx.createLinearGradient(0,Math.min(...ys),0,Math.max(...ys)+1);
+      grad.addColorStop(0,face.c);grad.addColorStop(1,shade(face.c,.86));
+      poly(face.p,grad,'rgba(20,38,48,.18)',.7);
+    }
   }
 
+  function shade(hex,factor){
+    if(!/^#[\da-f]{6}$/i.test(hex)) return hex;
+    return '#'+hex.slice(1).match(/../g).map(c=>Math.round(parseInt(c,16)*factor).toString(16).padStart(2,'0')).join('');
+  }
+  function cylinder(cx,cy,z,r,depth,color){
+    const ring=(height)=>Array.from({length:48},(_,i)=>v(cx+Math.cos(i*Math.PI/24)*r,cy+Math.sin(i*Math.PI/24)*r,height));
+    const base=ring(z),top=ring(z+depth);
+    for(let i=0;i<48;i++)poly([base[i],base[(i+1)%48],top[(i+1)%48],top[i]],shade(color,.62+.26*(1+Math.cos(i*Math.PI/24))/2),null);
+    poly(top,color,'#657680',1);
+    poly(ring(z+depth+.5).map(p=>v(cx+(p.x-cx)*.8,cy+(p.y-cy)*.8,p.z)),shade(color,.92),'#ffffff66',1);
+  }
   function drawBreadboard(){
     box(0,0,-5,B.w,B.h,10,C.board,C.boardEdge);
     // central trench
@@ -166,7 +218,7 @@
         label(v(B.x+B.w+12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:10});
       }
     }
-    silkText(v(0,rowY(19),8),'PŁYTKA STYKOWA 400 PÓL · A–J / 1–30',{size:10,color:'#5f676b'});
+    silkText(v(0,rowY(28),8),'A–J / 1–30',{size:9,color:'#657985'});
 
     // Otwory krytyczne dla rezystora/wyjścia. Etykiety rozstawione osobno, żeby się nie zlewały.
     circle3(v(colX.I,rowY(5),11),7,'#fff3e0',C.out,3);
@@ -261,8 +313,14 @@
     const cx=-520, cy=-80, z=125, w=340, h=172;
     box(cx,cy,z,w,h,12,C.lcd,C.lcdEdge);
     const frontVisible=rot(v(0,0,1)).z>=0;
+    for(const dx of [-w/2+13,w/2-13]) for(const dy of [-h/2+13,h/2-13]) circle3(v(cx+dx,cy+dy,z+8),5,'#e4ecdd','#516f60',1.5);
     if(frontVisible){
-      poly([v(cx-w/2+28,cy-h/2+28,z+9),v(cx+w/2-28,cy-h/2+28,z+9),v(cx+w/2-28,cy+h/2-38,z+9),v(cx-w/2+28,cy+h/2-38,z+9)],C.screen,'#101418',4);
+      box(cx,cy-5,z+10,w-42,h-48,10,'#253746','#12212d');
+      poly([v(cx-w/2+28,cy-h/2+28,z+9),v(cx+w/2-28,cy-h/2+28,z+9),v(cx+w/2-28,cy+h/2-38,z+9),v(cx-w/2+28,cy+h/2-38,z+9)],'#1e4d95','#101f34',2);
+      for(let row=0;row<2;row++)for(let col=0;col<16;col++){
+        const x=cx-124+col*16,y=cy-36+row*31;
+        poly([v(x,y,z+17),v(x+11,y,z+17),v(x+11,y+22,z+17),v(x,y+22,z+17)],'rgba(129,181,255,.12)',null);
+      }
       label(v(cx,cy+46,z+14),'LCD1602 16×2',{size:13,bg:'rgba(23,134,77,.9)',color:'#fff',stroke:C.lcdEdge});
     }
     // back I2C adapter and header are visible when the model is turned around
@@ -305,8 +363,8 @@
     box(cx,cy,z,w,h,12,C.ky,C.kyEdge);
     const frontVisible=rot(v(0,0,1)).z>=0;
     if(frontVisible){
-      circle3(v(cx,cy-32,z+34),52,'#8f989d','#50595e',5);
-      circle3(v(cx,cy-32,z+48),27,'#b7bec2','#626a6e',3);
+      cylinder(cx,cy-32,z+8,52,18,'#84939d');
+      cylinder(cx,cy-32,z+26,27,38,'#c1cbd1');
       label(v(cx,cy+65,z+18),'KY-040',{size:14,bg:'rgba(20,20,20,.9)',color:'#fff',stroke:'#444'});
     }
     // Tył KY-040: pola lutownicze, plastikowa listwa i wystające goldpiny.
@@ -379,12 +437,12 @@
   }
 
   function drawTitle(){
-    ctx.save();
-    ctx.fillStyle='rgba(255,255,255,.92)'; ctx.strokeStyle='#d5dee2'; ctx.lineWidth=1;
-    roundRect(18,18,390,66,10); ctx.fill(); ctx.stroke();
-    ctx.fillStyle=C.text; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='800 19px Segoe UI, Arial'; ctx.fillText('MONTAŻ 3D — PŁYTKA + PINY OD TYŁU',34,31);
-    ctx.font='600 12px Segoe UI, Arial'; ctx.fillStyle='#52666f'; ctx.fillText('Przeciągnij: obrót · rolka: zoom · prawy/Shift: przesunięcie',34,58);
-    ctx.restore();
+    const width=canvas.getBoundingClientRect().width;
+    ctx.save();ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillStyle='#647c8c';ctx.font=`600 10px ${font}`;ctx.fillText('Z A P P E R  /  3 D',24,22);
+    ctx.fillStyle='#203a4b';ctx.font=`600 ${width<500?16:20}px ${font}`;ctx.fillText('MONTAŻ · PŁYTKA + MODUŁY',24,42);
+    ctx.fillStyle='#647c8c';ctx.font=`500 10px ${font}`;ctx.fillText('PINY LCD / KY-040: WIDOK OD TYŁU',24,68);
+    ctx.strokeStyle='#cedce5';ctx.beginPath();ctx.moveTo(24,88);ctx.lineTo(width-24,88);ctx.stroke();ctx.restore();
   }
 
   function render(){
@@ -397,8 +455,12 @@
     if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; }
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,cssW,cssH);
-    ctx.fillStyle=C.bg;
-    ctx.fillRect(0,0,cssW,cssH);
+    const background=ctx.createRadialGradient(cssW*.45,cssH*.4,10,cssW*.5,cssH*.5,cssW*.75);
+    background.addColorStop(0,'#ffffff');background.addColorStop(1,'#e4edf3');
+    ctx.fillStyle=background;ctx.fillRect(0,0,cssW,cssH);
+    ctx.fillStyle='rgba(111,140,159,.16)';
+    for(let x=24;x<cssW;x+=24)for(let y=100;y<cssH;y+=24){ctx.beginPath();ctx.arc(x,y,.7,0,Math.PI*2);ctx.fill();}
+    labelQueue=[];
     drawBreadboard();
     drawNano();
     const lcd=drawLCD();
@@ -410,24 +472,33 @@
     drawNano();
     drawLCD();
     drawKY();
+    drawLabels();
     drawTitle();
   }
 
   function setView(name){
     state.autoFrame=false;
+    for(const button of document.querySelectorAll('[data-wiring-view]')) button.setAttribute('aria-pressed',String(button.dataset.wiringView===name));
     if(name==='top'){ state.yaw=0; state.pitch=0; state.zoom=.82; state.panX=0; state.panY=10; }
     else if(name==='rear'){ state.yaw=Math.PI; state.pitch=0.34; state.zoom=.80; state.panX=0; state.panY=20; }
-    else if(name==='lcdRear'){ state.yaw=2.55; state.pitch=.40; state.zoom=1.05; state.panX=210; state.panY=25; }
-    else if(name==='kyRear'){ state.yaw=-2.48; state.pitch=.40; state.zoom=1.05; state.panX=-210; state.panY=25; }
+    else if(name==='lcdRear'){ state.yaw=2.55; state.pitch=.40; state.zoom=1.05; state.panX=0; state.panY=0;
+      const target=project(v(-520,-80,125)),rect=canvas.getBoundingClientRect();
+      state.panX=rect.width/2-target.x;state.panY=rect.height/2-target.y; }
+    else if(name==='kyRear'){ state.yaw=-2.48; state.pitch=.40; state.zoom=1.05; state.panX=0; state.panY=0;
+      const target=project(v(535,-55,130)),rect=canvas.getBoundingClientRect();
+      state.panX=rect.width/2-target.x;state.panY=rect.height/2-target.y; }
     else {
-      // Widok montażowy / Reset: prosto od przodu i automatycznie na środku.
-      state.yaw=0; state.pitch=0; state.zoom=.82; state.panX=0; state.panY=0; state.autoFrame=true;
+      // Lekka perspektywa pokazuje grubość płytek; widok z góry pozostaje płaski.
+      state.yaw=-.22; state.pitch=.34; state.zoom=.82; state.panX=0; state.panY=0; state.autoFrame=true;
     }
     render();
   }
   window.wiring3dView=setView;
   window.wiring3dReset=()=>setView('iso');
-  window.wiring3dToggleLabels=()=>{state.labels=!state.labels;render();};
+  window.wiring3dToggleLabels=()=>{state.labels=!state.labels;
+    const button=document.getElementById('wiring3dLabels');
+    if(button)button.setAttribute('aria-pressed',String(state.labels));
+    render();};
 
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   canvas.addEventListener('pointerdown',e=>{
@@ -440,9 +511,19 @@
     render(); e.preventDefault();
   });
   const end=e=>{state.dragging=false;state.panning=false;canvas.classList.remove('dragging');try{canvas.releasePointerCapture(e.pointerId);}catch(_){}};
-  canvas.addEventListener('pointerup',end); canvas.addEventListener('pointercancel',end);
-  canvas.addEventListener('wheel',e=>{state.autoFrame=false;state.zoom=Math.max(.55,Math.min(2.0,state.zoom*(e.deltaY<0?1.08:.92)));render();e.preventDefault();},{passive:false});
+  canvas.addEventListener('pointerup',end); canvas.addEventListener('pointercancel',end); canvas.addEventListener('lostpointercapture',end);
+  canvas.addEventListener('wheel',e=>{if(!e.deltaY)return;state.autoFrame=false;state.zoom=Math.max(.55,Math.min(2.0,state.zoom*(e.deltaY<0?1.08:.92)));render();e.preventDefault();},{passive:false});
   canvas.addEventListener('dblclick',e=>{setView('iso');e.preventDefault();});
+  canvas.addEventListener('keydown',e=>{
+    if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-','0'].includes(e.key))return;
+    e.preventDefault();state.autoFrame=false;
+    if(e.key==='0'){setView('iso');return;}
+    if(e.key==='+'||e.key==='=')state.zoom=Math.min(2,state.zoom*1.08);
+    else if(e.key==='-')state.zoom=Math.max(.55,state.zoom*.92);
+    else if(e.shiftKey){state.panX+=e.key==='ArrowLeft'?-16:e.key==='ArrowRight'?16:0;state.panY+=e.key==='ArrowUp'?-16:e.key==='ArrowDown'?16:0;}
+    else{state.yaw+=e.key==='ArrowLeft'?-.08:e.key==='ArrowRight'?.08:0;state.pitch=Math.max(-1.45,Math.min(1.45,state.pitch+(e.key==='ArrowUp'?.08:e.key==='ArrowDown'?-.08:0)));}
+    render();
+  });
   new ResizeObserver(render).observe(scene||canvas);
   render();
 })();

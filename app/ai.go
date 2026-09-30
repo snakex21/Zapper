@@ -37,27 +37,27 @@ type aiProgramStep struct {
 }
 
 type aiPhase struct {
-	Name           string                     `json:"name"`
-	Days           int                        `json:"days"`
-	EveryDays      *int                       `json:"every_days,omitempty"`
-	Program        string                     `json:"program,omitempty"`
-	FrequencyHz    *float64                   `json:"frequency_hz,omitempty"`
-	DurationSeconds *uint32                   `json:"duration_seconds,omitempty"`
-	Steps          []aiProgramStep            `json:"steps,omitempty"`
-	Repeat         *int                       `json:"repeat,omitempty"`
-	BreakMinutes   *int                       `json:"break_minutes,omitempty"`
-	Note           string                     `json:"note,omitempty"`
-	Week           map[string]aiSessionChoice `json:"week,omitempty"`
+	Name            string                     `json:"name"`
+	Days            int                        `json:"days"`
+	EveryDays       *int                       `json:"every_days,omitempty"`
+	Program         string                     `json:"program,omitempty"`
+	FrequencyHz     *float64                   `json:"frequency_hz,omitempty"`
+	DurationSeconds *uint32                    `json:"duration_seconds,omitempty"`
+	Steps           []aiProgramStep            `json:"steps,omitempty"`
+	Repeat          *int                       `json:"repeat,omitempty"`
+	BreakMinutes    *int                       `json:"break_minutes,omitempty"`
+	Note            string                     `json:"note,omitempty"`
+	Week            map[string]aiSessionChoice `json:"week,omitempty"`
 }
 
 type aiSessionChoice struct {
-	Program         string           `json:"program"`
-	FrequencyHz     *float64         `json:"frequency_hz,omitempty"`
-	DurationSeconds *uint32          `json:"duration_seconds,omitempty"`
-	Steps           []aiProgramStep  `json:"steps,omitempty"`
-	Repeat          *int             `json:"repeat,omitempty"`
-	BreakMinutes    *int             `json:"break_minutes,omitempty"`
-	Note            string           `json:"note,omitempty"`
+	Program         string          `json:"program"`
+	FrequencyHz     *float64        `json:"frequency_hz,omitempty"`
+	DurationSeconds *uint32         `json:"duration_seconds,omitempty"`
+	Steps           []aiProgramStep `json:"steps,omitempty"`
+	Repeat          *int            `json:"repeat,omitempty"`
+	BreakMinutes    *int            `json:"break_minutes,omitempty"`
+	Note            string          `json:"note,omitempty"`
 }
 
 // optionalInt zwraca wartość pola, jeśli AI je podało, albo wartość domyślną.
@@ -317,7 +317,8 @@ func (a *Application) PreviewAIProfile(raw string) (AIImportPreviewBatch, error)
 	// jak dawniej (np. phases[0].repeats). Dla tablicy osób `[0].phases[...]`
 	// rozdzielamy je na podgląd właściwej osoby.
 	unknownByPerson := map[int][]string{}
-	if len(imports) > 1 {
+	isArray := strings.HasPrefix(strings.TrimSpace(stripJSONFence(raw)), "[")
+	if isArray {
 		for _, path := range collectUnknownFields(raw, []aiProfileInput{}) {
 			index := -1
 			if strings.HasPrefix(path, "[") {
@@ -345,7 +346,7 @@ func (a *Application) PreviewAIProfile(raw string) (AIImportPreviewBatch, error)
 		}
 		preview.ProgramCount = aiProgramCount(item.Input)
 		preview.Warnings = aiSchedulingWarnings(item.Input)
-		if len(imports) == 1 {
+		if !isArray {
 			preview.UnknownFields = collectUnknownFields(raw, aiProfileInput{})
 		} else {
 			preview.UnknownFields = unknownByPerson[index]
@@ -784,7 +785,7 @@ func aiDailyPlan(choice aiSessionChoice, programs map[string]aiProgramRuntime) (
 		Note:        strings.TrimSpace(choice.Note),
 		DeviceSteps: steps,
 		Scheduling: SessionScheduling{
-			Repetitions:       repeat,
+			Repetitions:         repeat,
 			BreakBetweenMinutes: breakMinutes,
 		},
 	}, nil

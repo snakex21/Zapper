@@ -168,8 +168,11 @@
         .real3d-block { margin:20px 0 30px; }
         .real3d-toolbar { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
         .real3d-toolbar button { border:1px solid #c7d2d7; background:#fff; padding:9px 13px; border-radius:7px; cursor:pointer; font-weight:700; }
-        .real3d-toolbar button:hover { background:#eef4f6; }
-        .real3d-scene { position:relative; height:clamp(500px,72vh,860px); border:2px solid #cfd8dc; border-radius:14px; overflow:hidden; background:#f5f8f9; box-shadow:0 8px 25px rgba(0,0,0,.07) inset; }
+        .real3d-toolbar button:hover { background:#edf4f8; border-color:#91adbd; }
+        .real3d-toolbar button[aria-pressed="true"] { color:#175a7c; background:#e8f3f9; border-color:#91b6ca; }
+        .real3d-scene canvas:focus-visible { outline:3px solid #2885b1; outline-offset:-4px; }
+        .real3d-toolbar button:focus-visible { outline:3px solid #2885b1; outline-offset:3px; }
+        .real3d-scene { position:relative; height:clamp(500px,72vh,860px); border:1px solid #c9d9e3; border-radius:16px; overflow:hidden; background:#eef3f7; box-shadow:0 12px 32px rgba(34,66,86,.08); }
         .real3d-scene canvas { display:block; width:100%; height:100%; cursor:grab; user-select:none; touch-action:none; }
         .real3d-scene canvas.dragging { cursor:grabbing; }
         .real3d-note { margin:8px 0 0; color:#546e7a; font-size:13px; }
@@ -249,16 +252,16 @@
 
     <div class="real3d-block">
         <div class="real3d-toolbar">
-            <button type="button" onclick="wiring3dView('iso')">Widok montażu 3D</button>
-            <button type="button" onclick="wiring3dView('top')">Z góry</button>
-            <button type="button" onclick="wiring3dView('rear')">Od tyłu</button>
-            <button type="button" onclick="wiring3dView('lcdRear')">LCD1602 — tył i I2C</button>
-            <button type="button" onclick="wiring3dView('kyRear')">KY-040 — tylne piny</button>
-            <button type="button" onclick="wiring3dToggleLabels()">Opisy wł./wył.</button>
+            <button type="button" data-wiring-view="iso" aria-pressed="true" onclick="wiring3dView('iso')">Widok montażu 3D</button>
+            <button type="button" data-wiring-view="top" aria-pressed="false" onclick="wiring3dView('top')">Z góry</button>
+            <button type="button" data-wiring-view="rear" aria-pressed="false" onclick="wiring3dView('rear')">Od tyłu</button>
+            <button type="button" data-wiring-view="lcdRear" aria-pressed="false" onclick="wiring3dView('lcdRear')">LCD1602 — tył i I2C</button>
+            <button type="button" data-wiring-view="kyRear" aria-pressed="false" onclick="wiring3dView('kyRear')">KY-040 — tylne piny</button>
+            <button type="button" id="wiring3dLabels" aria-pressed="true" onclick="wiring3dToggleLabels()">Opisy wł./wył.</button>
             <button type="button" onclick="wiring3dReset()">Reset</button>
         </div>
         <div class="real3d-scene" id="wiring3dScene">
-            <canvas id="wiring3dCanvas" aria-label="Interaktywny model 3D montażu Zappera"></canvas>
+            <canvas id="wiring3dCanvas" tabindex="0" aria-label="Interaktywny model 3D montażu Zappera"></canvas>
         </div>
         <div class="real3d-note">Lewy przycisk myszy: obrót • rolka: zoom • Shift albo prawy przycisk: przesunięcie • dwuklik: reset.</div>
         <div class="connection-legend-grid">

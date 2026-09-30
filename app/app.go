@@ -614,7 +614,7 @@ func (a *Application) SavePausedSession(pause DevicePauseState, recordPartial bo
 		for _, step := range plan.DeviceSteps {
 			total += step.DurationSeconds
 		}
-		done := total
+		var done uint32
 		if pause.RemainingSeconds < total {
 			done = total - pause.RemainingSeconds
 		}
@@ -1048,6 +1048,11 @@ func progressForProfile(source Progress, profile Profile) Progress {
 			result.History[date] = map[string]HistoryEntry{profile.Name: entry}
 		}
 	}
+	for _, partial := range source.PartialRuns {
+		if partial.ProfileID == profile.ID && (profile.RunID == "" || partial.RunID == profile.RunID) {
+			result.PartialRuns = append(result.PartialRuns, partial)
+		}
+	}
 	return result
 }
 
@@ -1092,6 +1097,12 @@ func progressWithoutProfile(source Progress, profile Profile) Progress {
 			result.History[date] = kept
 		}
 	}
+	for _, partial := range source.PartialRuns {
+		if partial.ProfileID == profile.ID && (profile.RunID == "" || partial.RunID == profile.RunID) {
+			continue
+		}
+		result.PartialRuns = append(result.PartialRuns, partial)
+	}
 	return result
 }
 
@@ -1127,6 +1138,11 @@ func progressWithoutPerson(source Progress, personID string) Progress {
 		result.Completions[sessionID] = completion
 	}
 	result.History = source.History
+	for _, partial := range source.PartialRuns {
+		if partial.PersonID != personID {
+			result.PartialRuns = append(result.PartialRuns, partial)
+		}
+	}
 	return result
 }
 
