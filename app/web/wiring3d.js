@@ -18,8 +18,15 @@
     lastX: 0,
     lastY: 0,
     labels: false,
-    autoFrame: true
+    autoFrame: true,
+    pinned: null,   // połączenie wybrane kliknięciem / trybem krok po kroku
+    hover: null     // połączenie wskazane w legendzie
   };
+  // Identyfikatory połączeń służą wyłącznie do podświetlania; geometria i piny są bez zmian.
+  const LCD_IDS = ['lcd-gnd','lcd-vcc','lcd-sda','lcd-scl'];
+  const KY_IDS = ['ky-gnd','ky-vcc','ky-sw','ky-dt','ky-clk'];
+  let currentConn = null, drawnWires = [];
+  const focusId = () => state.hover || state.pinned;
 
   const C = {
     bg: '#eef3f7', board: '#f8f7f1', boardEdge: '#b9c2c8', hole: '#566770',
@@ -99,7 +106,7 @@
     const raised=points.map((p,i)=>i===0||i===points.length-1?p:v(p.x,p.y,p.z+Math.sin(i*Math.PI/(points.length-1))*34));
     const q=raised.map(project);
     // Rounded bends keep the exact terminals and lanes, while reading as insulated cable.
-    const path=()=>{
+    const trace=q=>{
       ctx.beginPath(); ctx.moveTo(q[0].x,q[0].y);
       for(let i=1;i<q.length-1;i++){
         const a=q[i-1],b=q[i],c=q[i+1];
@@ -110,42 +117,112 @@
       }
       ctx.lineTo(q[q.length-1].x,q[q.length-1].y);
     };
+    const path=()=>trace(q);
+    const focus=focusId(),dim=focus!==null&&focus!==currentConn;
+    // Cień rzucany na blat / płytkę pod przewodem — dzięki niemu kabel nie „wisi” w powietrzu.
+    const ground=raised.map(p=>project(v(p.x+5,p.y+8,Math.abs(p.x)<B.w/2&&Math.abs(p.y)<B.h/2?3:Math.max(-28,p.z-46))));
+    drawnWires.push({id:currentConn,q,color,width,path});
     ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
-    path();ctx.strokeStyle='rgba(36,53,63,.30)';ctx.lineWidth=width+2;ctx.shadowColor='rgba(28,47,63,.25)';ctx.shadowBlur=5;ctx.shadowOffsetY=5;ctx.stroke();
-    ctx.shadowColor='transparent';path();ctx.strokeStyle=color;ctx.lineWidth=width+.6;ctx.stroke();
-    ctx.translate(-.4,-.7);path();ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+    if(dim) ctx.globalAlpha=.16;
+    else{
+      trace(ground);
+      ctx.strokeStyle='rgba(24,40,52,.05)';ctx.lineWidth=width+2;ctx.shadowColor='rgba(24,40,52,.20)';ctx.shadowBlur=9;ctx.stroke();ctx.shadowColor='transparent';
+    }
+    tube(path,color,width);
+    ctx.restore();
+  }
+  // Izolacja przewodu: ciemny obrys, kolor, półcień od spodu i połysk od góry.
+  function tube(path,color,width){
+    path();ctx.strokeStyle=shade(color,.5);ctx.lineWidth=width+2.4;ctx.stroke();
+    path();ctx.strokeStyle=color;ctx.lineWidth=width+.4;ctx.stroke();
+    ctx.save();ctx.translate(.5,.9);path();ctx.strokeStyle='rgba(0,0,0,.18)';ctx.lineWidth=width*.34;ctx.stroke();ctx.restore();
+    ctx.save();ctx.translate(-.5,-.9);path();ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=Math.max(1,width*.26);ctx.stroke();ctx.restore();
+  }
+  function drawFocus(){
+    const focus=focusId();if(focus===null)return;
+    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+    const ring=(q,color)=>{ctx.beginPath();ctx.arc(q.x,q.y,8,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.95)';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+      ctx.beginPath();ctx.arc(q.x,q.y,3,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};
+    for(const w of drawnWires){
+      if(w.id!==focus)continue;
+      w.path();ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=w.width+7;ctx.shadowColor=w.color;ctx.shadowBlur=16;ctx.stroke();ctx.shadowColor='transparent';
+      tube(w.path,w.color,w.width+1.5);
+      ring(w.q[0],w.color);ring(w.q[w.q.length-1],w.color);
+    }
+    if(focus==='res'){
+      // Rezystor nie jest przewodem: podświetlamy jego dwa otwory i5 / i1.
+      const a=project(v(colX.I,rowY(5),30)),b=project(v(colX.I,rowY(1),30));
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(239,108,0,.85)';ctx.lineWidth=5;ctx.shadowColor=C.out;ctx.shadowBlur=16;ctx.stroke();ctx.shadowColor='transparent';
+      ring(a,C.out);ring(b,C.out);
+    }
+    ctx.restore();
   }
   function circle3(p, radius, fill, stroke, width=1){
     const q=project(p); const rr=Math.max(1,radius*q.s); ctx.beginPath(); ctx.arc(q.x,q.y,rr,0,Math.PI*2); if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}
   }
   function label(p, text, opts={}){
-    if(state.labels) labelQueue.push({p,text,opts});
+    const focus=focusId();
+    // Wybrane połączenie pokazuje tylko swoje opisy; tryb „wszystkie opisy” pomija opisy pomocnicze.
+    if(focus!==null?opts.conn===focus:(state.labels&&!opts.focusOnly)) labelQueue.push({p,text,opts});
   }
   function drawLabels(){
     const occupied=[],rect=canvas.getBoundingClientRect();
     // Remove labels from the second geometry pass, then place callouts only once.
-    const seen=new Set();
+    const seen=new Set(),items=[];
     for(const {p,text,opts} of labelQueue){
       const key=text+JSON.stringify(p);if(seen.has(key))continue;seen.add(key);
       const q=project(p),size=Math.max(7,(opts.size||13)*Math.min(1,rect.width/950));
       if(q.x < -20 || q.x > rect.width+20 || q.y < 80 || q.y > rect.height+20)continue;
       ctx.font=`${opts.bold===false?'500':'600'} ${size}px ${font}`;
-      const w=ctx.measureText(text).width+12,h=size+10;
-      const desiredX=q.x+(opts.dx||0),desiredY=q.y+(opts.dy||0);
-      let x=Math.max(w/2+8,Math.min(rect.width-w/2-8,desiredX)),y=desiredY;
-      const collides=()=>occupied.some(r=>Math.abs(x-r.x)<(w+r.w)/2+3&&Math.abs(y-r.y)<(h+r.h)/2+3);
-      // Compact row/column coordinates stay anchored; callouts can move with a leader.
-      if(text.length>2){for(let i=0;i<20&&collides();i++)y=desiredY+(i%2?1:-1)*(Math.floor(i/2)+1)*(h+3);}
-      y=Math.max(96+h/2,Math.min(rect.height-h/2-10,y));
-      if(text.length>2) occupied.push({x,y,w,h});
+      items.push({q,text,opts,size,w:ctx.measureText(text).width+12,h:size+10});
+    }
+    const paint=(item,x,y)=>{
+      const {q,text,opts,size,w,h}=item;
       if(Math.abs(x-q.x)>22||Math.abs(y-q.y)>22){
-        ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(x,y);ctx.strokeStyle=opts.stroke||'#9eafb9';ctx.lineWidth=.8;ctx.stroke();
-        ctx.beginPath();ctx.arc(q.x,q.y,2,0,Math.PI*2);ctx.fillStyle=opts.stroke||'#8196a4';ctx.fill();
+        const edge=Math.abs(x-q.x)>w/2?x+(q.x<x?-w/2:w/2):x;
+        ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(edge,y);ctx.strokeStyle=opts.stroke||'#9eafb9';ctx.lineWidth=1;ctx.stroke();
+        ctx.beginPath();ctx.arc(q.x,q.y,2.4,0,Math.PI*2);ctx.fillStyle=opts.stroke||'#8196a4';ctx.fill();
       }
-      ctx.save();ctx.shadowColor='rgba(23,43,60,.09)';ctx.shadowBlur=5;ctx.shadowOffsetY=2;
-      ctx.fillStyle=opts.bg||'rgba(255,255,255,.97)';ctx.strokeStyle=opts.stroke||'#d5dfe5';ctx.lineWidth=.8;
+      ctx.save();ctx.shadowColor='rgba(23,43,60,.12)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;
+      ctx.fillStyle=opts.bg||'rgba(255,255,255,.97)';ctx.strokeStyle=opts.stroke||'#d5dfe5';ctx.lineWidth=opts.stroke?1.2:.8;
       roundRect(x-w/2,y-h/2,w,h,5);ctx.fill();ctx.shadowColor='transparent';ctx.stroke();ctx.restore();
+      ctx.font=`${opts.bold===false?'500':'600'} ${size}px ${font}`;
       ctx.fillStyle=opts.color||C.text;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y+.5);
+      occupied.push({x,y,w,h});
+    };
+    const hits=(x,y,w,h)=>occupied.some(r=>Math.abs(x-r.x)<(w+r.w)/2+3&&Math.abs(y-r.y)<(h+r.h)/2+3);
+    const top=96,bottom=rect.height-10;
+
+    // 1. Opisy otworów płytki: dwie kolumny po bokach breadboardu, posortowane w pionie,
+    //    każdy z linią prowadzącą — nigdy nie nachodzą na siebie ani na płytkę.
+    const screenLeftIsBoardLeft=project(v(B.x,0,0)).x<=project(v(B.x+B.w,0,0)).x;
+    for(const side of ['L','R']){
+      const group=items.filter(item=>item.opts.side===side).sort((a,b)=>a.q.y-b.q.y);
+      if(!group.length)continue;
+      const toLeft=(side==='L')===screenLeftIsBoardLeft,gap=4;
+      const corners=[v(B.x,B.y,0),v(B.x+B.w,B.y,0),v(B.x,B.y+B.h,0),v(B.x+B.w,B.y+B.h,0)].map(project).map(c=>c.x);
+      const maxW=Math.max(...group.map(item=>item.w));
+      let column=toLeft?Math.min(...corners,...group.map(item=>item.q.x))-26:Math.max(...corners,...group.map(item=>item.q.x))+26;
+      column=toLeft?Math.max(maxW+8,column):Math.min(rect.width-maxW-8,column);
+      let y=-Infinity;const ys=group.map(item=>{y=Math.max(item.q.y,y+item.h+gap);return y;});
+      const overflow=ys[ys.length-1]+group[group.length-1].h/2-bottom;
+      const shift=overflow>0?Math.min(overflow,Math.max(0,ys[0]-group[0].h/2-top)):0;
+      group.forEach((item,i)=>paint(item,toLeft?column-item.w/2:column+item.w/2,ys[i]-shift));
+    }
+    // 2. Opisy modułów i przewodów: przesuwane w pionie, aż znajdą wolne miejsce.
+    for(const item of items){
+      if(item.opts.side||item.text.length<=2)continue;
+      const {q,opts,w,h}=item,desiredX=q.x+(opts.dx||0),desiredY=q.y+(opts.dy||0);
+      const x=Math.max(w/2+8,Math.min(rect.width-w/2-8,desiredX));let y=desiredY;
+      for(let i=0;i<24&&hits(x,y,w,h);i++)y=desiredY+(i%2?1:-1)*(Math.floor(i/2)+1)*(h+3);
+      paint(item,x,Math.max(top+h/2,Math.min(bottom-h/2,y)));
+    }
+    // 3. Współrzędne A–J / 1–30 tylko tam, gdzie niczego nie zasłaniają.
+    for(const item of items){
+      if(item.opts.side||item.text.length>2)continue;
+      const {q,opts,w,h}=item,x=Math.max(w/2+8,Math.min(rect.width-w/2-8,q.x+(opts.dx||0))),y=q.y+(opts.dy||0);
+      if(y<top+h/2||y>bottom-h/2||hits(x,y,w,h))continue;
+      paint(item,x,y);
     }
   }
   function silkText(p,text,opts={}){
@@ -176,16 +253,23 @@
       poly(face.p,grad,'rgba(13,27,34,.3)',.65);
     }
     line([...upper,upper[0]],'rgba(255,255,255,.18)',.65);
+    if(Math.min(w,h)>80&&rot(v(0,0,1)).z>0){
+      // Delikatny połysk laminatu / tworzywa od strony światła.
+      const a=project(v(x0,y0,z1)),b=project(v(x1,y1,z1));
+      const sheen=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+      sheen.addColorStop(0,'rgba(255,255,255,.20)');sheen.addColorStop(.38,'rgba(255,255,255,.03)');sheen.addColorStop(.62,'rgba(255,255,255,0)');sheen.addColorStop(1,'rgba(0,0,0,.07)');
+      poly(upper,sheen,null);
+    }
   }
 
   function shade(hex,factor){
     if(!/^#[\da-f]{6}$/i.test(hex)) return hex;
     return '#'+hex.slice(1).match(/../g).map(c=>Math.round(parseInt(c,16)*factor).toString(16).padStart(2,'0')).join('');
   }
-  function cylinder(cx,cy,z,r,depth,color){
+  function cylinder(cx,cy,z,r,depth,color,knurl=false){
     const ring=(height)=>Array.from({length:48},(_,i)=>v(cx+Math.cos(i*Math.PI/24)*r,cy+Math.sin(i*Math.PI/24)*r,height));
     const base=ring(z),top=ring(z+depth);
-    for(let i=0;i<48;i++)poly([base[i],base[(i+1)%48],top[(i+1)%48],top[i]],shade(color,.62+.26*(1+Math.cos(i*Math.PI/24))/2),null);
+    for(let i=0;i<48;i++)poly([base[i],base[(i+1)%48],top[(i+1)%48],top[i]],shade(color,(.62+.26*(1+Math.cos(i*Math.PI/24))/2)*(knurl&&i%2?.74:1)),null);
     poly(top,color,'#657680',1);
     poly(ring(z+depth+.5).map(p=>v(cx+(p.x-cx)*.8,cy+(p.y-cy)*.8,p.z)),shade(color,.92),'#ffffff66',1);
   }
@@ -258,35 +342,38 @@
     circle3(v(colX.I,rowY(5),11),7,'#fff3e0',C.out,3);
     circle3(v(colX.I,rowY(1),11),7,'#fff3e0',C.out,3);
     circle3(v(colX.J,rowY(1),11),7,'#fff3e0',C.out,3);
-    label(v(colX.I,rowY(5),18),'i5 · D9/H5',{size:9,bg:'#fff8e1',stroke:C.out,dx:78,dy:22});
-    label(v(colX.I,rowY(1),18),'i1 · rezystor',{size:9,bg:'#fff8e1',stroke:C.out,dx:58,dy:-39});
-    label(v(colX.J,rowY(1),18),'j1 · czerwony OUT',{size:9,bg:'#fff8e1',stroke:C.out,dx:126,dy:-10});
+    label(v(colX.I,rowY(5),18),'i5 · D9/H5',{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
+    label(v(colX.I,rowY(1),18),'i1 · rezystor',{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
+    label(v(colX.J,rowY(1),18),'j1 · czerwony OUT',{size:10,bg:'#fff8e1',stroke:C.out,dx:0,dy:-34,conn:'out-red'});
   }
 
   function drawBoardConnector(col,row,color,text,opts={}){
+    const dim=focusId()!==null&&focusId()!==opts.conn;
+    if(dim){ctx.save();ctx.globalAlpha=.3;}
     const x=colX[col], y=rowY(row);
     // Goldpin wpięty w breadboard + kolorowa plastikowa tulejka jak na przewodzie Dupont.
     circle3(v(x,y,9),6.6,'#d9dde0','#667176',1.4);
     circle3(v(x,y,10),2.7,C.gold,'#80651e',1);
     box(x,y,23,6,6,27,C.gold,'#80651e');
     box(x,y,38,13,13,9,color,'#30363a');
-    label(v(x,y,49),text,{size:8,bg:'#fff',stroke:color,dx:opts.dx||0,dy:opts.dy||0});
+    if(dim)ctx.restore();
+    label(v(x,y,49),text,{size:10,bg:'#fff',stroke:color,side:'ABCDE'.includes(col)?'L':'R',conn:opts.conn});
   }
 
   function drawBoardConnectors(){
     // Lewa połowa A–E: te otwory są połączone poziomo z pinami Nano w kolumnie D.
-    drawBoardConnector('A',9,C.green,'a9 · SDA',{dx:-27});
-    drawBoardConnector('A',10,C.blue,'a10 · SCL',{dx:-30});
-    drawBoardConnector('A',13,C.red,'a13 · LCD VCC',{dx:-58,dy:-23});
-    drawBoardConnector('B',13,C.red,'b13 · KY +',{dx:64,dy:32});
-    drawBoardConnector('A',15,C.black,'a15 · LCD GND',{dx:-42});
-    drawBoardConnector('B',15,C.black,'b15 · CZARNY',{dx:38,dy:14});
+    drawBoardConnector('A',9,C.green,'a9 · SDA',{conn:'lcd-sda'});
+    drawBoardConnector('A',10,C.blue,'a10 · SCL',{conn:'lcd-scl'});
+    drawBoardConnector('A',13,C.red,'a13 · LCD VCC',{conn:'lcd-vcc'});
+    drawBoardConnector('B',13,C.red,'b13 · KY +',{conn:'ky-vcc'});
+    drawBoardConnector('A',15,C.black,'a15 · LCD GND',{conn:'lcd-gnd'});
+    drawBoardConnector('B',15,C.black,'b15 · CZARNY',{conn:'out-black'});
 
     // Prawa połowa F–J: te otwory są połączone poziomo z prawą listwą Nano w kolumnie H.
-    drawBoardConnector('J',10,C.cyan,'j10 · SW',{dx:35});
-    drawBoardConnector('J',11,C.purple,'j11 · DT',{dx:35});
-    drawBoardConnector('J',12,C.orange,'j12 · CLK',{dx:38});
-    drawBoardConnector('J',13,C.black,'j13 · KY GND',{dx:45});
+    drawBoardConnector('J',10,C.cyan,'j10 · SW',{conn:'ky-sw'});
+    drawBoardConnector('J',11,C.purple,'j11 · DT',{conn:'ky-dt'});
+    drawBoardConnector('J',12,C.orange,'j12 · CLK',{conn:'ky-clk'});
+    drawBoardConnector('J',13,C.black,'j13 · KY GND',{conn:'ky-gnd'});
   }
 
   function drawNano(){
@@ -334,21 +421,25 @@
     line([v(x,y5,8),v(x,y5-18,z)],'#a8b9bf',3);
     line([v(x,y1+18,z),v(x,y1,8)],'#a8b9bf',3);
     box(x,(y1+y5)/2,z,22,50,20,'#d9bd8b','#6d4c41');
-    for(const off of [-14,0,14]){
-      line([v(x-11,(y1+y5)/2+off,z+11),v(x+11,(y1+y5)/2+off,z+11)],off===0?'#d32f2f':'#6d4c41',3);
-    }
-    label(v(x,(y1+y5)/2,z+34),'1 kΩ · i5 → i1',{size:10,bg:'#fff8e1',stroke:C.out,dx:96,dy:-28});
+    [[-17,'#7a4a2b'],[-8,'#1d1d1d'],[1,'#d32f2f'],[16,'#c9a227']].forEach(([off,band])=>{
+      line([v(x-11,(y1+y5)/2+off,z+11),v(x+11,(y1+y5)/2+off,z+11)],band,3.4);
+    });
+    line([v(x-7,y1+20,z+11),v(x-7,y5-20,z+11)],'rgba(255,255,255,.35)',1.4);
+    label(v(x,(y1+y5)/2,z+34),'1 kΩ · i5 → i1',{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
 
     // Czerwony krokodylek: wyjście z j1, wysoko nad KY-040.
     const redY=y1-48;
+    currentConn='out-red';
     wire([v(colX.J,y1,12),v(260,redY,58),v(420,redY,58)],C.out,5);
-    label(v(310,redY,68),'j1 → czerwony krokodylek',{size:10,bg:'#fff3e0',stroke:C.out,dy:-16});
+    label(v(310,redY,68),'j1 → czerwony krokodylek',{size:10,bg:'#fff3e0',stroke:C.out,dy:-22,conn:'out-red'});
     drawClip(v(475,redY,58),C.red,'CZERWONY');
 
     // Czarny krokodylek: osobna dolna trasa, daleko pod KY-040.
     const blackY=rowY(28)+46;
+    currentConn='out-black';
     wire([v(colX.B,rowY(15),38),v(250,blackY,38),v(420,blackY,38)],C.black,5);
-    label(v(305,blackY,48),'b15 → czarny krokodylek',{size:10,bg:'#fff',stroke:'#777',dy:-16});
+    label(v(305,blackY,48),'b15 → czarny krokodylek',{size:10,bg:'#fff',stroke:'#777',dy:-22,conn:'out-black'});
+    currentConn=null;
     drawClip(v(475,blackY,38),C.black,'CZARNY');
   }
 
@@ -382,6 +473,7 @@
         const x=cx-124+col*16,y=cy-36+row*31;
         poly([v(x,y,z+17),v(x+11,y,z+17),v(x+11,y+22,z+17),v(x,y+22,z+17)],'rgba(129,181,255,.12)',null);
       }
+      'ZAPPER v5'.split('').forEach((ch,i)=>{if(ch!==' ')projectedText(v(cx-124+i*16+5.5,cy-36+11,z+18),ch,17,'rgba(226,240,255,.92)');});
       projectedText(v(cx,cy+65,z+9),'LCD1602  ·  I2C',14,'#d0e7d7');
       label(v(cx,cy+46,z+14),'LCD1602 16×2',{size:13,bg:'rgba(23,134,77,.9)',color:'#fff',stroke:C.lcdEdge});
     }
@@ -434,7 +526,7 @@
       box(cx,cy-32,z+25,135,125,35,'#b9c5c9','#617782');
       for(const dx of [-55,55])box(cx+dx,cy-32,z+45,9,81,5,'#8e9fa7','#516773');
       cylinder(cx,cy-32,z+43,46,12,'#c1cbd1');
-      cylinder(cx,cy-32,z+55,25,48,'#c1cbd1');
+      cylinder(cx,cy-32,z+55,25,48,'#c1cbd1',true);
       line([v(cx-16,cy-32,z+104),v(cx+16,cy-32,z+104)],'#6f838e',2);
       for(let i=0;i<3;i++)smd(cx-49+i*48,cy+57,z+13,20,10);
       projectedText(v(cx,cy+81,z+9),'KY-040',18,'#e0e8df');
@@ -488,7 +580,9 @@
       const stub=v(p.x,p.y+30+i*10,p.z);
       const lane=v(lcdLaneX[i],stub.y,50+i*4);
       const turn=v(lcdLaneX[i],lcdTargets[i].y,42+i*3);
+      currentConn=LCD_IDS[i];
       wire([p,stub,lane,turn,lcdTargets[i]],lcdColors[i],4);
+      label(p,'LCD '+lcd.pinNames[i],{size:10,bg:'#fff',stroke:lcdColors[i],dy:26,conn:LCD_IDS[i],focusOnly:true});
     });
 
     const kyTargets=[
@@ -501,6 +595,8 @@
     const kyColors=[C.black,C.red,C.cyan,C.purple,C.orange];
     const kyLaneX=[302,326,350,374,398];
     ky.pins.forEach((p,i)=>{
+      currentConn=KY_IDS[i];
+      label(p,'KY '+ky.names[i],{size:10,bg:'#fff',stroke:kyColors[i],dy:26,conn:KY_IDS[i],focusOnly:true});
       const stub=v(p.x,p.y+34+i*12,p.z);
       const lane=v(kyLaneX[i],stub.y,52+i*4);
       if(i===1){
@@ -513,6 +609,7 @@
         wire([p,stub,lane,turn,kyTargets[i]],kyColors[i],4);
       }
     });
+    currentConn=null;
   }
 
   function drawTitle(){
@@ -537,7 +634,7 @@
     const background=ctx.createRadialGradient(cssW*.45,cssH*.4,10,cssW*.5,cssH*.5,cssW*.75);
     background.addColorStop(0,'#fbfcfb');background.addColorStop(.65,'#eef2f3');background.addColorStop(1,'#d9e3e8');
     ctx.fillStyle=background;ctx.fillRect(0,0,cssW,cssH);
-    labelQueue=[];
+    labelQueue=[];drawnWires=[];
     footprint(12,16,-43,B.w+4,B.h+4);
     footprint(-498,-49,-40,340,172);
     footprint(557,-24,-40,235,250);
@@ -552,6 +649,7 @@
     drawNano();
     drawLCD();
     drawKY();
+    drawFocus();
     drawLabels();
     drawTitle();
   }
@@ -580,9 +678,55 @@
     if(button)button.setAttribute('aria-pressed',String(state.labels));
     render();};
 
+  // --- Wybór połączenia: legenda (najechanie / klik), klik w przewód, tryb krok po kroku ---
+  const legend=Array.from(document.querySelectorAll('[data-wire]')).filter(el=>el&&el.dataset&&el.dataset.wire&&el.addEventListener);
+  const steps=legend.filter(el=>el.dataset.wireStep!==undefined);
+  const stepCount=document.getElementById('wiring3dStepCount'),stepText=document.getElementById('wiring3dStepText');
+  function syncFocus(){
+    const focus=focusId();
+    for(const el of legend){el.classList.toggle('is-active',el.dataset.wire===focus);el.setAttribute('aria-pressed',String(el.dataset.wire===state.pinned));}
+    const index=steps.findIndex(el=>el.dataset.wire===state.pinned);
+    if(stepCount&&steps.length)stepCount.textContent=`${index<0?'–':index+1} / ${steps.length}`;
+    if(stepText&&steps.length){stepText.textContent=index<0?'':steps[index].textContent.replace(/\s+/g,' ').trim();}
+    render();
+  }
+  function pin(id){state.pinned=state.pinned===id?null:id;syncFocus();}
+  window.wiring3dFocus=id=>{state.pinned=id||null;syncFocus();};
+  window.wiring3dStep=delta=>{
+    if(!steps.length)return;
+    const index=steps.findIndex(el=>el.dataset.wire===state.pinned);
+    const next=index<0?(delta>0?0:steps.length-1):(index+delta+steps.length)%steps.length;
+    state.pinned=steps[next].dataset.wire;state.hover=null;syncFocus();
+  };
+  for(const el of legend){
+    el.addEventListener('mouseenter',()=>{state.hover=el.dataset.wire;syncFocus();});
+    el.addEventListener('mouseleave',()=>{state.hover=null;syncFocus();});
+    el.addEventListener('click',()=>pin(el.dataset.wire));
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pin(el.dataset.wire);}});
+  }
+  let pressX=0,pressY=0;
+  function wireAt(x,y){
+    let best=null,bestDistance=9;
+    for(const w of drawnWires){
+      for(let i=1;i<w.q.length;i++){
+        const a=w.q[i-1],b=w.q[i],dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy||1;
+        const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/len));
+        const distance=Math.hypot(x-a.x-dx*t,y-a.y-dy*t);
+        if(distance<bestDistance){bestDistance=distance;best=w.id;}
+      }
+    }
+    return best;
+  }
+  canvas.addEventListener('click',e=>{
+    // Klik bez przeciągnięcia: wybierz przewód pod kursorem albo wyczyść wybór.
+    if(Math.hypot(e.clientX-pressX,e.clientY-pressY)>5)return;
+    const rect=canvas.getBoundingClientRect(),id=wireAt(e.clientX-(rect.left||0),e.clientY-(rect.top||0));
+    if(id===null&&state.pinned===null)return;
+    state.pinned=id===state.pinned?null:id;syncFocus();
+  });
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   canvas.addEventListener('pointerdown',e=>{
-    state.autoFrame=false;
+    state.autoFrame=false;pressX=e.clientX;pressY=e.clientY;
     state.dragging=true; state.panning=e.button===2||e.shiftKey; state.lastX=e.clientX; state.lastY=e.clientY; canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); e.preventDefault();
   });
   canvas.addEventListener('pointermove',e=>{
@@ -605,5 +749,6 @@
     render();
   });
   new ResizeObserver(render).observe(scene||canvas);
+  if(steps.length)syncFocus();
   render();
 })();

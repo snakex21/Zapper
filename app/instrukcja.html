@@ -5,88 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dokumentacja Zapper DIY v5.1.0</title>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #27ae60;
-            --bg: #f4f7f6;
-            --text: #333;
-            --code-bg: #1e1e1e;
-            --code-text: #dcdcdc;
-        }
-        body {
-            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: var(--text);
-            background-color: var(--bg);
-            margin: 0;
-            padding: 40px;
-        }
-        .container {
-            max-width: 1320px;
-            margin: 0 auto;
-            background: white;
-            padding: 60px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border-radius: 15px;
-            border-top: 10px solid var(--accent);
-        }
-        h1 { color: var(--primary); font-size: 2.8em; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 20px;}
-        h2 { 
-            color: white; 
-            background: var(--primary); 
-            padding: 10px 15px; 
-            border-radius: 5px; 
-            margin-top: 50px; 
-            font-size: 1.4em;
-        }
-        h3 { color: var(--accent); margin-top: 30px; border-left: 4px solid var(--accent); padding-left: 10px; }
-        
-        ul, ol { margin-left: 20px; }
-        li { margin-bottom: 8px; }
-
-        .box {
-            background: #e8f8f5;
-            border: 1px solid #d1f2eb;
-            color: #0e6655;
-            padding: 15px 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-        .coord-box {
-            background: #fff8e1;
-            border: 1px solid #ffe0b2;
-            color: #e65100;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-family: 'Consolas', monospace;
-            font-size: 1.1em;
-        }
-        .warning {
-            background: #fdedec;
-            border: 1px solid #fadbd8;
-            color: #922b21;
-            font-weight: bold;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; }
-        th { background-color: var(--primary); color: white; }
-        tr:nth-child(even) { background-color: #f8f9fa; }
-
-        pre {
-            background-color: var(--code-bg);
-            color: var(--code-text);
-            padding: 20px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            border: 1px solid #444;
-        }
-
         .assembly-controls { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
         .assembly-controls button { border:1px solid #cfd8dc; background:#fff; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:600; }
         .assembly-stage { position:relative; height:470px; overflow:hidden; border:1px solid #dfe6e9; border-radius:12px; background:linear-gradient(#f9fbfb,#eef3f4); perspective:1100px; margin:12px 0 24px; cursor:grab; user-select:none; touch-action:none; }
@@ -183,59 +101,543 @@
         .connection-legend-grid .legend-line { display:grid; grid-template-columns:12px 1fr; gap:8px; align-items:center; margin:5px 0; font-family:Consolas,monospace; font-size:13px; }
         .connection-legend-grid .swatch { width:10px; height:10px; border-radius:50%; display:block; }
         .connection-legend-grid .note { margin-top:8px; font-size:12px; color:#596b73; }
-        @media (max-width: 980px) {
-            body { padding:12px; }
-            .container { padding:22px; border-radius:10px; }
-            h1 { font-size:2em; }
-            .connection-legend-grid { grid-template-columns:1fr; }
-            .real3d-scene { height:clamp(460px,68vh,680px); }
-            .svg-wiring-viewer { height:clamp(460px,68vh,680px); }
-            .real3d-toolbar button, .svg-wiring-toolbar button { padding:8px 10px; font-size:13px; }
+        /* ===== Motyw instrukcji — spójny z aplikacją (app.css) ===== */
+        :root {
+            --ink: #16211d;
+            --ink-soft: #52605a;
+            --surface: #f5f6f2;
+            --paper: #ffffff;
+            --line: #dde2dd;
+            --line-strong: #c8d0ca;
+            --accent: #20815f;
+            --accent-dark: #156348;
+            --accent-soft: #e3f2eb;
+            --sidebar: #17231f;
+            --danger: #a33d3d;
+            --danger-soft: #fbeeee;
+            --danger-line: #e6bcbc;
+            --warning: #9a6a1d;
+            --warning-soft: #fdf6e6;
+            --warning-line: #ecd29c;
+            --mono: "Cascadia Mono", Consolas, monospace;
+            --toc-width: 250px;
+            --sticky-offset: 16px;
+            --icon-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z'/%3E%3C/svg%3E");
+            --icon-alert: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5 1 21.5h22L12 2.5Zm1 15.5h-2v-2h2v2Zm0-4h-2V9h2v5Z'/%3E%3C/svg%3E");
+            --icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z'/%3E%3C/svg%3E");
+            --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23156348' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round' d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E");
         }
-        @media (max-width: 620px) {
-            body { padding:6px; }
-            .container { padding:12px; border-top-width:6px; }
-            .real3d-scene, .svg-wiring-viewer { height:520px; }
-            .real3d-toolbar { gap:5px; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; scrollbar-color: var(--line-strong) transparent; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+            font-size: clamp(14.5px, 0.45vw + 11px, 16.5px);
+            line-height: 1.62;
+            color: var(--ink);
+            background: var(--paper);
+            -webkit-font-smoothing: antialiased;
         }
+
+        .guide-shell {
+            display: grid;
+            grid-template-columns: var(--toc-width) minmax(0, 1fr);
+            align-items: start;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+        .container { min-width: 0; padding: clamp(18px, 3vw, 40px) clamp(16px, 3.4vw, 48px) 64px; }
+        .container > p, .container > ul, .container > ol { max-width: 88ch; }
+
+        /* --- Spis treści --- */
+        .guide-toc {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            padding: clamp(18px, 3vw, 40px) 14px 24px 18px;
+            border-inline-end: 1px solid var(--line);
+            background: var(--surface);
+            scrollbar-width: thin;
+        }
+        .guide-toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+        .guide-toc li { margin: 0; }
+        .guide-toc a {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            color: var(--ink-soft);
+            font-size: 13.5px;
+            line-height: 1.3;
+            text-decoration: none;
+            transition: background .15s ease, color .15s ease;
+        }
+        .guide-toc a:hover { background: #e9ece8; color: var(--ink); }
+        .guide-toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .guide-toc .toc-h2 { margin-top: 10px; }
+        .guide-toc .toc-h2:first-child { margin-top: 0; }
+        .guide-toc .toc-h2 > a { color: var(--ink); font-weight: 680; font-size: 14px; }
+        .guide-toc .toc-h3 > a { padding-inline-start: 41px; }
+        .guide-toc .toc-num {
+            flex: none;
+            display: grid;
+            place-items: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--paper);
+            border: 1px solid var(--line-strong);
+            color: var(--ink-soft);
+            font-size: 12px;
+            font-weight: 750;
+        }
+        .guide-toc a.active { background: var(--accent-soft); color: var(--accent-dark); }
+        .guide-toc a.active .toc-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .guide-toc .toc-safety > a { color: var(--danger); font-weight: 680; }
+        .guide-toc .toc-safety > a::before {
+            content: "";
+            flex: none;
+            width: 16px;
+            height: 16px;
+            margin-inline-start: -28px;
+            margin-inline-end: 3px;
+            background: currentColor;
+            -webkit-mask: var(--icon-alert) center / contain no-repeat;
+            mask: var(--icon-alert) center / contain no-repeat;
+        }
+        .guide-toc .toc-safety > a.active { background: var(--danger-soft); color: var(--danger); }
+
+        /* --- Nagłówek dokumentu --- */
+        .guide-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(190px, 300px);
+            gap: clamp(16px, 3vw, 36px);
+            align-items: center;
+            padding: clamp(18px, 2.6vw, 30px);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent-soft), var(--surface) 62%);
+        }
+        .guide-hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(1.7rem, 2.2vw + 1rem, 2.6rem);
+            line-height: 1.12;
+            letter-spacing: -0.02em;
+            font-weight: 750;
+            text-wrap: balance;
+        }
+        .guide-hero p { margin: 0 0 16px; color: var(--ink-soft); line-height: 1.8; }
+        .guide-hero p strong { color: var(--ink); font-weight: 650; }
+        .hero-art {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            background: var(--sidebar);
+            box-shadow: 0 18px 40px rgba(22, 33, 29, .18);
+            transform: perspective(900px) rotateY(-9deg) rotateX(3deg);
+        }
+        .hero-art .scope-grid { stroke: rgba(255, 255, 255, .07); stroke-width: 1; }
+        .hero-art .scope-frame { fill: #0f1a16; stroke: #2f423a; stroke-width: 1.5; }
+        .hero-art .scope-wave {
+            fill: none;
+            stroke: #52bd8b;
+            stroke-width: 3;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 5px rgba(82, 189, 139, .7));
+            animation: scope-scroll 2.4s linear infinite;
+        }
+        .hero-art .scope-led { fill: #52bd8b; animation: scope-blink 2.4s ease-in-out infinite; }
+        .hero-art .scope-knob { fill: #26342f; stroke: #52605a; stroke-width: 2; }
+        .hero-art .scope-tube { fill: #c98b55; stroke: #8a5a30; stroke-width: 1.5; }
+        .hero-art .scope-lead { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+        @keyframes scope-scroll { to { transform: translateX(-80px); } }
+        @keyframes scope-blink { 50% { opacity: .35; } }
 
         .print-btn {
-            float: right;
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 8px 16px;
+            border: 1px solid var(--line-strong);
+            border-radius: 7px;
+            background: var(--paper);
+            color: var(--ink);
+            font: inherit;
+            font-weight: 680;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.3s;
+            transition: .16s ease;
         }
-        .print-btn:hover { background: #219150; transform: translateY(-2px); }
+        .print-btn:hover { border-color: var(--accent); color: var(--accent-dark); background: var(--accent-soft); }
+        .print-btn:focus-visible, .real3d-toolbar button:focus-visible, .svg-wiring-toolbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+        /* --- Typografia --- */
+        h2, h3 { scroll-margin-top: var(--sticky-offset); text-wrap: balance; }
+        h2 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: clamp(40px, 6vh, 64px) 0 18px;
+            padding-top: 26px;
+            border-top: 1px solid var(--line);
+            font-size: clamp(1.3rem, 1vw + 1rem, 1.75rem);
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+            font-weight: 730;
+        }
+        h2::before { content: ""; flex: none; width: 6px; height: 1.15em; border-radius: 3px; background: var(--accent); }
+        h3 { margin: 34px 0 10px; font-size: clamp(1.05rem, .4vw + .95rem, 1.22rem); line-height: 1.3; font-weight: 700; color: var(--accent-dark); }
+        p { margin: 10px 0; }
+        ul, ol { margin: 10px 0; padding-inline-start: 24px; }
+        li { margin-bottom: 6px; }
+        li::marker { color: var(--accent); }
+        code {
+            padding: 1px 6px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            background: #eef1ee;
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: .88em;
+        }
+
+        /* --- Lista zakupów --- */
+        .parts-list {
+            list-style: none;
+            max-width: none !important;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+        }
+        .parts-list li {
+            position: relative;
+            margin: 0;
+            padding: 12px 14px;
+            padding-inline-start: 44px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--paper);
+            color: var(--ink-soft);
+            line-height: 1.45;
+        }
+        .parts-list li strong { display: block; color: var(--ink); }
+        .parts-list li::before {
+            content: "";
+            position: absolute;
+            inset-inline-start: 13px;
+            top: 14px;
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: var(--accent-soft) var(--icon-check) center / 13px no-repeat;
+            border: 1px solid #bfdccf;
+        }
+
+        /* --- Kroki numerowane --- */
+        ol.steps { list-style: none; padding: 0; counter-reset: step; display: grid; gap: 12px; max-width: 96ch; }
+        ol.steps > li {
+            position: relative;
+            counter-increment: step;
+            margin: 0;
+            padding: 14px 16px;
+            padding-inline-start: 62px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--paper);
+        }
+        ol.steps > li::before {
+            content: counter(step);
+            position: absolute;
+            inset-inline-start: 16px;
+            top: 12px;
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 750;
+            font-size: 15px;
+        }
+        ol.steps > li > strong:first-child { font-size: 1.04em; }
+        ol.steps > li > ul { margin: 6px 0 0; padding-inline-start: 18px; color: var(--ink-soft); }
+        ol.steps > li > ul strong { color: var(--ink); }
+
+        /* --- Ramki: informacja / współrzędne / uwaga / ostrzeżenie --- */
+        .box, .coord-box, .warning, .real3d-important, .svg-wiring-warning, .caution-note {
+            position: relative;
+            margin: 18px 0;
+            padding: 14px 18px;
+            padding-inline-start: 50px;
+            border: 1px solid var(--line);
+            border-inline-start-width: 4px;
+            border-radius: 10px;
+            max-width: 110ch;
+        }
+        .box::before, .coord-box::before, .warning::before, .real3d-important::before, .svg-wiring-warning::before, .caution-note::before {
+            content: "";
+            position: absolute;
+            inset-inline-start: 15px;
+            top: 15px;
+            width: 22px;
+            height: 22px;
+            background: currentColor;
+            -webkit-mask: var(--icon) center / contain no-repeat;
+            mask: var(--icon) center / contain no-repeat;
+        }
+        .box { --icon: var(--icon-info); background: var(--accent-soft); border-color: #bfdccf; border-inline-start-color: var(--accent); color: var(--ink); }
+        .box::before { color: var(--accent); }
+        .box ul { margin-bottom: 0; }
+        .coord-box {
+            --icon: var(--icon-pin);
+            background: var(--surface);
+            border-color: var(--line-strong);
+            border-inline-start-color: var(--warning);
+            color: var(--ink);
+            font-family: var(--mono);
+            font-size: .93em;
+            font-weight: 400;
+            line-height: 1.75;
+        }
+        .coord-box::before { color: var(--warning); }
+        .coord-box strong { padding: 0 5px; border-radius: 4px; background: #fbe9c4; color: #6b4a12; }
+        .real3d-important, .svg-wiring-warning, .caution-note {
+            --icon: var(--icon-alert);
+            background: var(--warning-soft);
+            border-color: var(--warning-line);
+            border-inline-start-color: var(--warning);
+        }
+        .real3d-important::before, .svg-wiring-warning::before, .caution-note::before { color: var(--warning); }
+        .caution-note em { font-style: normal; }
+        .warning {
+            --icon: var(--icon-alert);
+            background: var(--danger-soft);
+            border-color: var(--danger-line);
+            border-inline-start-color: var(--danger);
+            color: #6f2424;
+            font-weight: 650;
+        }
+        .warning::before { color: var(--danger); }
+
+        /* --- Zasady bezpieczeństwa: zawsze wyraźnie widoczne --- */
+        .safety-card {
+            margin: 36px 0 0;
+            padding: clamp(16px, 2.2vw, 26px);
+            border: 2px solid var(--danger);
+            border-radius: 14px;
+            background: var(--danger-soft);
+            box-shadow: 0 14px 34px rgba(163, 61, 61, .12);
+            max-width: 110ch;
+        }
+        .safety-card h3 { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; color: var(--danger); font-size: clamp(1.2rem, .8vw + 1rem, 1.5rem); }
+        .safety-card h3::before {
+            content: "";
+            flex: none;
+            width: 34px;
+            height: 34px;
+            background: var(--danger);
+            -webkit-mask: var(--icon-alert) center / contain no-repeat;
+            mask: var(--icon-alert) center / contain no-repeat;
+        }
+        .safety-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+        .safety-card li {
+            margin: 0;
+            padding: 11px 14px;
+            border: 1px solid var(--danger-line);
+            border-inline-start: 4px solid var(--danger);
+            border-radius: 8px;
+            background: var(--paper);
+            font-size: 1.04em;
+        }
+        .safety-card li strong { color: #7c2a2a; }
+
+        /* --- Tabele --- */
+        .table-wrap { margin: 16px 0 22px; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+        table { width: 100%; border-collapse: collapse; font-size: .96em; }
+        th, td { padding: 10px 14px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
+        th { background: var(--surface); color: var(--ink-soft); font-size: .8em; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+        tr:last-child td { border-bottom: 0; }
+        tr:nth-child(odd) td { background: #fafbf9; }
+        tr:hover td { background: var(--accent-soft); }
+        td strong { font-family: var(--mono); padding: 1px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent-dark); }
+        .connection-table td:first-child { font-weight: 650; }
+
+        /* --- Kod firmware --- */
+        pre {
+            max-height: min(62vh, 560px);
+            margin: 14px 0 22px;
+            padding: 16px 18px;
+            overflow: auto;
+            border: 1px solid #26342f;
+            border-radius: 12px;
+            background: var(--sidebar);
+            color: #d8e3de;
+            font: 12.5px/1.55 var(--mono);
+            tab-size: 2;
+            scrollbar-color: #52605a transparent;
+        }
+        pre code { padding: 0; border: 0; background: none; color: inherit; font-size: inherit; }
+
+        /* --- Widok 3D i schemat 2D --- */
+        .real3d-toolbar, .svg-wiring-toolbar { gap: 6px; }
+        .real3d-toolbar button, .svg-wiring-toolbar button {
+            min-height: 36px;
+            padding: 7px 13px;
+            border: 1px solid var(--line-strong);
+            border-radius: 7px;
+            background: var(--paper);
+            color: var(--ink);
+            font: inherit;
+            font-size: .92em;
+            font-weight: 650;
+            transition: .16s ease;
+        }
+        .real3d-toolbar button:hover, .svg-wiring-toolbar button:hover { background: var(--surface); border-color: var(--accent); }
+        .real3d-toolbar button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); }
+        .real3d-scene { border-color: var(--line-strong); border-radius: 14px; box-shadow: 0 18px 45px rgba(22, 33, 29, .08); }
+        .real3d-scene canvas:focus-visible { outline: 3px solid var(--accent); }
+        .svg-wiring-viewer { border-color: var(--line-strong); border-radius: 14px; }
+        .real3d-note, .svg-wiring-help { color: var(--ink-soft); font-size: .86em; }
+        .connection-legend-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .connection-legend-grid .legend-card { border-color: var(--line); border-radius: 12px; background: var(--paper); }
+        .connection-legend-grid .legend-line { font-family: var(--mono); }
+        .connection-legend-grid .swatch { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--line-strong); }
+        .connection-legend-grid .note { color: var(--ink-soft); }
+
+        /* --- Wybór połączenia: legenda + tryb krok po kroku --- */
+        .connection-legend-grid .legend-line {
+            margin: 2px -8px;
+            padding: 5px 8px;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: background .12s ease, border-color .12s ease;
+        }
+        .connection-legend-grid .legend-line:hover, .connection-legend-grid .legend-line.is-active { background: var(--accent-soft); border-color: #bfdccf; }
+        .connection-legend-grid .legend-line[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); font-weight: 700; }
+        .connection-legend-grid .legend-line:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .real3d-step {
+            position: absolute;
+            left: 50%;
+            bottom: 14px;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: calc(100% - 24px);
+            padding: 6px;
+            border: 1px solid var(--line-strong);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .94);
+            box-shadow: 0 10px 28px rgba(22, 33, 29, .14);
+            backdrop-filter: blur(6px);
+        }
+        .real3d-step button {
+            flex: none;
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            transition: background .15s ease;
+        }
+        .real3d-step button:hover { background: var(--accent-dark); }
+        .real3d-step button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .real3d-step svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+        .real3d-step-count { flex: none; min-width: 52px; text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .real3d-step-text { overflow: hidden; color: var(--ink); font: 600 13px/1.3 var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+        .real3d-step-text:empty { display: none; }
+        body.rtl-guide .real3d-step { direction: ltr; }
+
+        /* --- Wąskie okno: spis treści jako pasek u góry --- */
+        @media (max-width: 1099px) {
+            :root { --sticky-offset: 64px; }
+            .guide-shell { display: block; }
+            .guide-toc {
+                z-index: 20;
+                height: auto;
+                padding: 8px 12px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                border-inline-end: 0;
+                border-bottom: 1px solid var(--line);
+                background: rgba(245, 246, 242, .94);
+                backdrop-filter: blur(8px);
+                scrollbar-width: none;
+            }
+            .guide-toc ol { display: flex; gap: 6px; }
+            .guide-toc li { flex: none; margin: 0 !important; }
+            .guide-toc .toc-h3:not(.toc-safety) { display: none; }
+            .guide-toc a { padding: 6px 12px 6px 8px; border: 1px solid var(--line); background: var(--paper); white-space: nowrap; }
+            .guide-toc .toc-safety > a { padding-inline-start: 36px; border-color: var(--danger-line); }
+            .real3d-scene, .svg-wiring-viewer { height: clamp(420px, 66vh, 680px); }
+        }
+        @media (max-width: 700px) {
+            .guide-hero { grid-template-columns: 1fr; }
+            .hero-art { display: none; }
+            ol.steps > li { padding-inline-start: 52px; }
+            ol.steps > li::before { inset-inline-start: 10px; }
+            .real3d-toolbar button, .svg-wiring-toolbar button { padding: 6px 9px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .hero-art .scope-wave, .hero-art .scope-led { animation: none; }
+        }
         @media print {
-            .print-btn { display: none; }
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; border: none; padding: 0; width: 100%; margin: 0; }
-            h2 { background: none; color: black; border-bottom: 2px solid black; padding: 0; }
-            pre { white-space: pre-wrap; border: 1px solid #ccc; color: black; background: none; }
+            .print-btn, .guide-toc, .hero-art, .real3d-toolbar, .svg-wiring-toolbar, .real3d-step { display: none !important; }
+            .guide-shell { display: block; }
+            .guide-hero { grid-template-columns: 1fr; border: 0; padding: 0; background: none; }
+            .container { padding: 0; }
+            h2 { break-after: avoid; }
+            .safety-card, ol.steps > li, .box, .coord-box, .warning { break-inside: avoid; box-shadow: none; }
+            pre { max-height: none; white-space: pre-wrap; border: 1px solid #ccc; color: #000; background: none; }
         }
     </style>
 </head>
 <body>
 
+<div class="guide-shell">
+<nav class="guide-toc" id="guideToc"><ol id="guideTocList"></ol></nav>
 <div class="container">
-    <button class="print-btn" onclick="window.print()">🖨️ Drukuj do PDF</button>
-
+    <header class="guide-hero">
+        <div>
     <h1>Dokumentacja Zapper DIY</h1>
     <p><strong>Wersja firmware:</strong> 5.1.0 (USB + tryb samodzielny + warianty językowe LCD)<br>
     <strong>Autor:</strong> Maksymilian<br>
     <strong>Opis:</strong> Generator częstotliwości terapeutycznych (Clark/Rife) na platformie Arduino.</p>
+    <button class="print-btn" onclick="window.print()">🖨️ Drukuj do PDF</button>
+        </div>
+        <svg class="hero-art" viewBox="0 0 300 190" aria-hidden="true" focusable="false">
+            <defs><clipPath id="scopeClip"><rect x="20" y="20" width="200" height="110" rx="8"/></clipPath></defs>
+            <rect class="scope-frame" x="20" y="20" width="200" height="110" rx="8"/>
+            <g clip-path="url(#scopeClip)">
+                <path class="scope-grid" d="M20 47.5h200M20 75h200M20 102.5h200M60 20v110M100 20v110M140 20v110M180 20v110"/>
+                <path class="scope-wave" d="M-20 100h40V50h40v50h40V50h40v50h40V50h40v50h40V50h40v50h40"/>
+            </g>
+            <circle class="scope-knob" cx="258" cy="52" r="20"/>
+            <path d="M258 36v12" stroke="#52bd8b" stroke-width="3" stroke-linecap="round"/>
+            <circle class="scope-led" cx="258" cy="104" r="6"/>
+            <path class="scope-lead" stroke="#d32f2f" d="M70 130c0 22 10 30 30 34"/>
+            <path class="scope-lead" stroke="#9aa5a0" d="M170 130c0 22-10 30-30 34"/>
+            <rect class="scope-tube" x="28" y="156" width="76" height="16" rx="8"/>
+            <rect class="scope-tube" x="136" y="156" width="76" height="16" rx="8"/>
+        </svg>
+    </header>
 
     <!-- SEKCJA 1 -->
     <h2>1. Lista Zakupów</h2>
-    <ul>
+    <ul class="parts-list">
         <li><strong>Arduino Nano V3</strong> (USB-C/MiniUSB) z wlutowanymi nóżkami.</li>
         <li><strong>Wyświetlacz LCD1602 (16x2, niebieski)</strong> z konwerterem I2C (czarna płytka z tyłu).</li>
         <li><strong>Enkoder KY-040</strong> (360° z przyciskiem).</li>
@@ -262,30 +664,36 @@
         </div>
         <div class="real3d-scene" id="wiring3dScene">
             <canvas id="wiring3dCanvas" tabindex="0" aria-label="Interaktywny model 3D montażu Zappera"></canvas>
+            <div class="real3d-step">
+                <button type="button" aria-label="Poprzedni" onclick="wiring3dStep(-1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
+                <span class="real3d-step-count" id="wiring3dStepCount"></span>
+                <span class="real3d-step-text" id="wiring3dStepText" aria-live="polite"></span>
+                <button type="button" aria-label="Następny" onclick="wiring3dStep(1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+            </div>
         </div>
         <div class="real3d-note">Lewy przycisk myszy: obrót • rolka: zoom • Shift albo prawy przycisk: przesunięcie • dwuklik: reset.</div>
         <div class="connection-legend-grid">
             <div class="legend-card">
                 <strong>LCD1602 I2C</strong>
-                <div class="legend-line"><span class="swatch" style="background:#222"></span><span>GND → a15 → Nano GND</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#d32f2f"></span><span>VCC → a13 → Nano 5V</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#2e7d32"></span><span>SDA → a9 → Nano A4</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#1565c0"></span><span>SCL → a10 → Nano A5</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="lcd-gnd" data-wire-step><span class="swatch" style="background:#222"></span><span>GND → a15 → Nano GND</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="lcd-vcc" data-wire-step><span class="swatch" style="background:#d32f2f"></span><span>VCC → a13 → Nano 5V</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="lcd-sda" data-wire-step><span class="swatch" style="background:#2e7d32"></span><span>SDA → a9 → Nano A4</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="lcd-scl" data-wire-step><span class="swatch" style="background:#1565c0"></span><span>SCL → a10 → Nano A5</span></div>
             </div>
             <div class="legend-card">
                 <strong>KY-040</strong>
-                <div class="legend-line"><span class="swatch" style="background:#f39c12"></span><span>CLK → j12 → Nano D2</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#8e24aa"></span><span>DT → j11 → Nano D3</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#00838f"></span><span>SW → j10 → Nano D4</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#d32f2f"></span><span>+ → b13 → Nano 5V</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#222"></span><span>GND → j13 → Nano GND</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="ky-clk" data-wire-step><span class="swatch" style="background:#f39c12"></span><span>CLK → j12 → Nano D2</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="ky-dt" data-wire-step><span class="swatch" style="background:#8e24aa"></span><span>DT → j11 → Nano D3</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="ky-sw" data-wire-step><span class="swatch" style="background:#00838f"></span><span>SW → j10 → Nano D4</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="ky-vcc" data-wire-step><span class="swatch" style="background:#d32f2f"></span><span>+ → b13 → Nano 5V</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="ky-gnd" data-wire-step><span class="swatch" style="background:#222"></span><span>GND → j13 → Nano GND</span></div>
             </div>
             <div class="legend-card">
                 <strong>Wyjście przez rezystor</strong>
-                <div class="legend-line"><span class="swatch" style="background:#ef6c00"></span><span>D9 jest w H5; i5 jest w tym samym połączonym rzędzie F–J</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#ef6c00"></span><span>rezystor 1 kΩ: i5 → i1</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#c62828"></span><span>j1 → czerwony krokodylek</span></div>
-                <div class="legend-line"><span class="swatch" style="background:#222"></span><span>Nano GND (D15) → b15 → czarny krokodylek</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="res"><span class="swatch" style="background:#ef6c00"></span><span>D9 jest w H5; i5 jest w tym samym połączonym rzędzie F–J</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="res" data-wire-step><span class="swatch" style="background:#ef6c00"></span><span>rezystor 1 kΩ: i5 → i1</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="out-red" data-wire-step><span class="swatch" style="background:#c62828"></span><span>j1 → czerwony krokodylek</span></div>
+                <div class="legend-line" role="button" tabindex="0" aria-pressed="false" data-wire="out-black" data-wire-step><span class="swatch" style="background:#222"></span><span>Nano GND (D15) → b15 → czarny krokodylek</span></div>
                 <div class="note">i1 i j1 są w tym samym połączonym rzędzie F–J. Dlatego przewód wyjściowy może być w j1, gdy nóżka rezystora jest w i1.</div>
             </div>
         </div>
@@ -420,7 +828,7 @@
         </div>
     </div>
 
-    <table class="connection-table">
+    <div class="table-wrap"><table class="connection-table">
         <tr><th>Element</th><th>Pin modułu</th><th>Otwór płytki</th><th>Pin Arduino Nano</th></tr>
         <tr><td>LCD1602</td><td>GND</td><td><code>a15</code></td><td><code>GND</code> — rząd 15 po lewej</td></tr>
         <tr><td>LCD1602</td><td>VCC</td><td><code>a13</code></td><td><code>5V</code> — rząd 13 po lewej</td></tr>
@@ -432,7 +840,7 @@
         <tr><td>KY-040</td><td>+</td><td><code>b13</code></td><td><code>5V</code> — wspólny rząd 13 po lewej</td></tr>
         <tr><td>KY-040</td><td>GND</td><td><code>j13</code></td><td><code>GND</code> — rząd 13 po prawej</td></tr>
         <tr><td>Wyjście testowe</td><td>D9</td><td><code>i5 → rezystor 1 kΩ → i1/j1</code></td><td><code>D9</code> — rząd 5 po prawej</td></tr>
-    </table>
+    </table></div>
 
     <p>To jest instrukcja odwzorowująca Twoje urządzenie. Płytka ma oznaczenia literowe (A-J) i cyfrowe (1-30).</p>
     
@@ -445,7 +853,7 @@
 
     <h3>A. Podłączenie LCD1602 I2C (Lewa strona - Kolumna A)</h3>
     <p>Użyj kabli Męsko-Żeńskich. Wpinamy w skrajną lewą kolumnę <strong>"a"</strong>.</p>
-    <table>
+    <div class="table-wrap"><table>
         <tr>
             <th>Kabel Ekranu</th>
             <th>Gdzie wbić? (Współrzędna)</th>
@@ -471,11 +879,11 @@
             <td><strong>a10</strong></td>
             <td>A5</td>
         </tr>
-    </table>
+    </table></div>
 
     <h3>B. Podłączenie GAŁKI (Prawa strona - Kolumna J)</h3>
     <p>Użyj kabli Męsko-Żeńskich. Wpinamy w skrajną prawą kolumnę <strong>"j"</strong>.</p>
-    <table>
+    <div class="table-wrap"><table>
         <tr>
             <th>Kabel Gałki</th>
             <th>Gdzie wbić? (Współrzędna)</th>
@@ -506,8 +914,8 @@
             <td><strong>b13</strong></td>
             <td>5V — rząd 13 po lewej</td>
         </tr>
-    </table>
-    <p><em>Plus KY-040 jest wpięty do <strong>b13</strong>. Sam przewód po wyjściu z b13 jest prowadzony w stronę kolumny C, skręca w dół przy c13 i dalej biegnie do KY-040. Nie używaj b2 — to nie jest 5V.</em></p>
+    </table></div>
+    <p class="caution-note"><em>Plus KY-040 jest wpięty do <strong>b13</strong>. Sam przewód po wyjściu z b13 jest prowadzony w stronę kolumny C, skręca w dół przy c13 i dalej biegnie do KY-040. Nie używaj b2 — to nie jest 5V.</em></p>
 
     <h3>C. D9 + rezystor 1 kΩ + punkt wyjściowy</h3>
     <p>Tu wcześniej brakowało najważniejszego elementu na rysunku. Rezystor ma być widoczny i wpięty <strong>szeregowo za D9</strong>.</p>
@@ -542,7 +950,7 @@
         </ul>
     </div>
 
-    <ol>
+    <ol class="steps">
         <li><strong>Cięcie:</strong>
             <ul>
                 <li>Odmierz na rurze dwa kawałki po około <strong>12 cm</strong> (tak, żeby rurka wystawała z zaciśniętej dłoni po 1-2 cm z każdej strony).</li>
@@ -978,20 +1386,23 @@ void updateProgressBar() {
     </ul>
 
     <h3>Obsługa Terapii</h3>
-    <ol>
+    <ol class="steps">
         <li><strong>Wybór Programu:</strong> Kręć gałką (Manual, Clark, Schumann).</li>
         <li><strong>Czas:</strong> Ustaw długość zabiegu (np. 7 min).</li>
         <li><strong>START:</strong> Kliknij gałkę. Dopiero teraz prąd płynie!</li>
         <li><strong>Stop Awaryjny:</strong> W trakcie terapii przytrzymaj przycisk (zobaczysz odliczanie).</li>
     </ol>
 
-    <h3>Zasady Bezpieczeństwa</h3>
+    <section class="safety-card">
+    <h3 data-toc="safety">Zasady Bezpieczeństwa</h3>
     <ul>
         <li><strong>Mokre Owijki:</strong> Rurki muszą być owinięte ręcznikiem z wodą i solą.</li>
         <li><strong>Nawodnienie:</strong> Pij wodę przed i po.</li>
         <li><strong>Rozrusznik serca:</strong> Zakaz używania.</li>
     </ul>
+    </section>
 
+</div>
 </div>
 
 <script>
@@ -1212,6 +1623,78 @@ void updateProgressBar() {
     } catch (error) {
         target.textContent = 'Nie udało się wczytać firmware v5.1.0. Sprawdź plik firmware/zapper_v5/zapper_v5.ino.\n\n' + error;
     }
+})();
+</script>
+<script>
+// Spis treści budowany z istniejących nagłówków (bez nowych tekstów do tłumaczenia).
+(function () {
+    const list = document.getElementById('guideTocList');
+    const toc = document.getElementById('guideToc');
+    const content = document.querySelector('.container');
+    if (!list || !toc || !content) return;
+    const headings = Array.from(content.querySelectorAll('h2, h3')).filter(function (h) { return h.offsetParent !== null; });
+    const links = new Map();
+    const text = function (h) { return h.textContent.replace(/\s+/g, ' ').trim(); };
+
+    headings.forEach(function (h, index) {
+        if (!h.id) h.id = 'sec-' + (index + 1);
+        const item = document.createElement('li');
+        item.className = h.tagName === 'H2' ? 'toc-h2' : 'toc-h3';
+        if (h.dataset.toc === 'safety') item.classList.add('toc-safety');
+        const link = document.createElement('a');
+        link.href = '#' + h.id;
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            h.scrollIntoView({ block: 'start' });
+        });
+        item.appendChild(link);
+        list.appendChild(item);
+        links.set(h, link);
+    });
+
+    function fill() {
+        links.forEach(function (link, h) {
+            const label = text(h);
+            const numbered = h.tagName === 'H2' && label.match(/^(\d+)\.\s*(.+)$/);
+            link.textContent = '';
+            if (numbered) {
+                const badge = document.createElement('span');
+                badge.className = 'toc-num';
+                badge.textContent = numbered[1];
+                link.appendChild(badge);
+            }
+            const span = document.createElement('span');
+            span.textContent = numbered ? numbered[2] : label;
+            link.appendChild(span);
+        });
+    }
+    fill();
+    // guide-i18n.js podmienia teksty nagłówków asynchronicznie — spis treści idzie za nimi.
+    new MutationObserver(fill).observe(content, { characterData: true, subtree: true });
+
+    let current = null, queued = false;
+    function spy() {
+        queued = false;
+        const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-offset')) || 16;
+        let active = headings[0];
+        for (const h of headings) {
+            if (h.getBoundingClientRect().top - offset - 12 <= 0) active = h; else break;
+        }
+        const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+        if (atEnd) active = headings[headings.length - 1];
+        if (active === current) return;
+        if (current) links.get(current).classList.remove('active');
+        current = active;
+        const link = links.get(active);
+        link.classList.add('active');
+        // Przewijamy tylko sam pasek/kolumnę spisu, nigdy stronę.
+        const horizontal = toc.scrollWidth > toc.clientWidth;
+        if (horizontal) toc.scrollLeft = link.offsetLeft - toc.clientWidth / 2 + link.offsetWidth / 2;
+        else toc.scrollTop = link.offsetTop - toc.clientHeight / 2;
+    }
+    window.addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(spy); } }, { passive: true });
+    window.addEventListener('resize', spy);
+    spy();
 })();
 </script>
 <script src="/wiring3d.js"></script>
