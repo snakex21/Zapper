@@ -5,76 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dokumentacja Zapper DIY v5.1.0</title>
     <style>
-        .assembly-controls { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
-        .assembly-controls button { border:1px solid #cfd8dc; background:#fff; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:600; }
-        .assembly-stage { position:relative; height:470px; overflow:hidden; border:1px solid #dfe6e9; border-radius:12px; background:linear-gradient(#f9fbfb,#eef3f4); perspective:1100px; margin:12px 0 24px; cursor:grab; user-select:none; touch-action:none; }
-        .assembly-stage.dragging { cursor:grabbing; }
-        .assembly-world { position:absolute; left:50%; top:50%; width:780px; height:380px; margin-left:-390px; margin-top:-190px; transform-style:preserve-3d; transform:translate3d(0,0,0) rotateX(54deg) rotateZ(-12deg) scale(0.92); transition:transform .12s ease; will-change:transform; }
-        .assembly-stage.dragging .assembly-world { transition:none; }
-        .assembly-help { position:absolute; left:12px; bottom:10px; z-index:10; padding:6px 9px; border-radius:6px; background:rgba(255,255,255,.9); border:1px solid #d5dee2; color:#455a64; font-size:12px; pointer-events:none; }
-        .part3d { position:absolute; box-sizing:border-box; border-radius:8px; box-shadow:0 10px 20px rgba(0,0,0,.14); font-weight:700; text-align:center; transform-style:preserve-3d; }
-        .breadboard3d { left:215px; top:70px; width:350px; height:245px; background-color:#f7f7f2; background-image:radial-gradient(circle,#8e9aa0 1.3px,transparent 1.5px); background-size:13px 13px; border:5px solid #e3e5df; }
-        .breadboard3d::after { content:"PŁYTKA STYKOWA 400 PÓL"; position:absolute; left:0; right:0; bottom:8px; color:#7b8589; font-size:12px; }
-        .nano3d { left:330px; top:105px; width:120px; height:180px; background:#1976a8; border:4px solid #115878; color:white; padding-top:62px; transform:translateZ(18px); }
-        .nano3d::before { content:"USB"; position:absolute; left:34px; top:-18px; width:48px; height:28px; line-height:28px; background:#cfd8dc; color:#37474f; border:2px solid #90a4ae; border-radius:4px; }
-        .lcd3d { left:18px; top:105px; width:180px; height:108px; background:#167d45; border:5px solid #0e5f33; color:white; padding-top:73px; transform:translateZ(26px); }
-        .lcd3d::before { content:"LCD1602 16×2"; position:absolute; left:15px; right:15px; top:14px; height:45px; line-height:45px; background:#173d91; border:4px solid #1c1c1c; color:#d9e7ff; font-family:Consolas,monospace; font-size:13px; }
-        .encoder3d { left:635px; top:112px; width:125px; height:110px; background:#296e43; border:4px solid #18512f; color:white; padding-top:76px; transform:translateZ(24px); }
-        .encoder3d::before { content:""; position:absolute; width:58px; height:58px; border-radius:50%; left:29px; top:10px; background:#9aa2a6; border:7px solid #626a6e; }
-        .wire3d { position:absolute; height:5px; border-radius:4px; transform-origin:0 50%; box-shadow:0 2px 3px rgba(0,0,0,.22); }
-        .wire3d::before, .wire3d::after { position:absolute; top:-28px; background:rgba(255,255,255,.96); border:1px solid #90a4ae; border-radius:5px; padding:2px 5px; font:700 12px Consolas,monospace; color:#263238; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,.15); }
-        .wire3d::before { content:attr(data-from); left:0; transform:translateX(-25%); }
-        .wire3d::after { content:attr(data-to); right:0; transform:translateX(25%); }
-        .resistor3d { position:absolute; left:530px; top:83px; width:18px; height:96px; transform:translateZ(26px); }
-        .resistor3d::before { content:""; position:absolute; left:7px; top:0; width:4px; height:96px; background:#ef6c00; }
-        .resistor3d::after { content:"1 kΩ  i5 → i1 → j1 OUT TEST"; position:absolute; left:24px; top:30px; background:#fff3e0; border:2px solid #ef6c00; color:#bf360c; border-radius:5px; padding:4px 7px; font:700 12px Consolas,monospace; white-space:nowrap; }
-        .nano-pin3d { position:absolute; z-index:8; padding:2px 5px; border-radius:4px; border:2px solid #f57f17; background:#fff59d; color:#3e2723; font:800 11px Consolas,monospace; transform:translateZ(36px); white-space:nowrap; }
-        .np-a4 { left:278px; top:179px; } .np-a5 { left:278px; top:195px; } .np-5v { left:278px; top:231px; } .np-lgnd { left:270px; top:255px; }
-        .np-d9 { left:454px; top:132px; } .np-d4 { left:454px; top:192px; } .np-d3 { left:454px; top:208px; } .np-d2 { left:454px; top:224px; } .np-rgnd { left:454px; top:240px; }
-        .w-lcd-gnd { left:194px; top:128px; width:145px; background:#222; transform:translateZ(12px) rotate(8deg); }
-        .w-lcd-vcc { left:194px; top:151px; width:150px; background:#d32f2f; transform:translateZ(13px) rotate(3deg); }
-        .w-lcd-sda { left:194px; top:177px; width:151px; background:#2e7d32; transform:translateZ(14px) rotate(-3deg); }
-        .w-lcd-scl { left:194px; top:200px; width:155px; background:#1565c0; transform:translateZ(15px) rotate(-8deg); }
-        .w-enc-clk { left:448px; top:139px; width:192px; background:#f9a825; transform:translateZ(12px) rotate(-2deg); }
-        .w-enc-dt { left:448px; top:164px; width:192px; background:#8e24aa; transform:translateZ(13px) rotate(2deg); }
-        .w-enc-sw { left:448px; top:189px; width:194px; background:#00838f; transform:translateZ(14px) rotate(5deg); }
-        .w-enc-gnd { left:448px; top:214px; width:195px; background:#222; transform:translateZ(15px) rotate(9deg); }
-        .w-enc-vcc { left:445px; top:239px; width:200px; background:#d32f2f; transform:translateZ(16px) rotate(12deg); }
-        .assembly-pinmap { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:14px 0 24px; }
-        .assembly-pinmap div { border:1px solid #dde4e7; border-radius:8px; padding:10px 12px; background:#fafcfc; }
-        .wiring-card { margin:18px 0 28px; border:2px solid #cfd8dc; border-radius:12px; background:#fff; overflow:hidden; }
-        .wiring-card h3 { margin:0; padding:14px 18px; border-left:0; background:#263238; color:white; }
-        .wiring-card p { padding:0 18px; }
-        .wiring-scroll { overflow-x:auto; padding:12px; }
-        .wiring-svg { display:block; width:100%; min-width:920px; height:auto; background:#f7fafb; border-radius:8px; }
-        .wiring-svg .board { fill:#f3f1e7; stroke:#b0bec5; stroke-width:3; }
-        .wiring-svg .nano { fill:#1780ad; stroke:#0f5f82; stroke-width:3; }
-        .wiring-svg .lcd { fill:#17864c; stroke:#0c6134; stroke-width:3; }
-        .wiring-svg .lcd-screen { fill:#153f94; stroke:#111; stroke-width:5; }
-        .wiring-svg .encoder { fill:#2f7548; stroke:#1c5935; stroke-width:3; }
-        .wiring-svg .knob { fill:#9aa2a6; stroke:#60686d; stroke-width:6; }
-        .wiring-svg .pin { fill:#fff; stroke:#263238; stroke-width:2; }
-        .wiring-svg .pin-used { fill:#fff59d; stroke:#f57f17; stroke-width:3; }
-        .wiring-svg .wire { fill:none; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; opacity:.92; }
-        .wiring-svg .wire-gnd { stroke:#212121; }
-        .wiring-svg .wire-vcc { stroke:#d32f2f; }
-        .wiring-svg .wire-sda { stroke:#2e7d32; }
-        .wiring-svg .wire-scl { stroke:#1565c0; }
-        .wiring-svg .wire-clk { stroke:#f9a825; }
-        .wiring-svg .wire-dt { stroke:#8e24aa; }
-        .wiring-svg .wire-sw { stroke:#00838f; }
-        .wiring-svg .wire-out { stroke:#ef6c00; }
-        .wiring-svg text { font-family:Segoe UI,Arial,sans-serif; fill:#263238; }
-        .wiring-svg .small { font-size:13px; }
-        .wiring-svg .label { font-size:15px; font-weight:700; }
-        .wiring-svg .major { font-size:19px; font-weight:800; }
-        .wiring-svg .endpoint { fill:#fff; stroke:#607d8b; stroke-width:1.5; rx:5; }
-        .wiring-svg .resistor-body { fill:#d7b98a; stroke:#6d4c41; stroke-width:2; }
         .connection-table code { font-weight:700; white-space:nowrap; }
         .connection-table td:first-child { font-weight:700; }
 
-        /* Nowy, główny schemat: płaski SVG. Stary pseudo-3D zostaje w pliku tylko tymczasowo, ale nie jest wyświetlany. */
-        .assembly-note, .assembly-controls, .assembly-stage, .assembly-pinmap, .wiring-card { display:none !important; }
         .svg-wiring-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
         .svg-wiring-toolbar button { border:1px solid #cfd8dc; background:#fff; padding:9px 14px; border-radius:7px; cursor:pointer; font-weight:700; }
         .svg-wiring-toolbar button:hover { background:#f1f5f6; }
@@ -662,6 +595,19 @@
             <button type="button" id="wiring3dLabels" aria-pressed="false" onclick="wiring3dToggleLabels()">Pokaż opisy połączeń</button>
             <button type="button" onclick="wiring3dReset()">Reset</button>
         </div>
+        <div id="wiring3dText" hidden>
+            <span data-k="title">Montaż · płytka + moduły</span>
+            <span data-k="subtitle">Piny LCD / KY-040: widok od tyłu</span>
+            <span data-k="i1">i1 · rezystor</span>
+            <span data-k="j1">j1 · czerwony OUT</span>
+            <span data-k="b15">b15 · czarny</span>
+            <span data-k="redLead">j1 → czerwony krokodylek</span>
+            <span data-k="blackLead">b15 → czarny krokodylek</span>
+            <span data-k="red">czerwony</span>
+            <span data-k="black">czarny</span>
+            <span data-k="kyBack">KY-040 · tył PCB</span>
+            <span data-k="rearPins">Piny / lutowanie od tyłu</span>
+        </div>
         <div class="real3d-scene" id="wiring3dScene">
             <canvas id="wiring3dCanvas" tabindex="0" aria-label="Interaktywny model 3D montażu Zappera"></canvas>
             <div class="real3d-step">
@@ -711,123 +657,6 @@
     </div>
     <div class="svg-wiring-help">Rolka myszy: powiększanie • przeciąganie lewym przyciskiem: przesunięcie • dwuklik: dopasowanie całości.</div>
     <div class="svg-wiring-warning"><strong>Wyjście jest pokazane wprost:</strong> pin <code>D9</code> → <code>rezystor 1 kΩ</code> → przewód → <strong>czerwony krokodylek</strong>. Czarny krokodylek idzie z <code>GND</code>. Schemat traktuj jako połączenie/punkt testowy układu.</div>
-    <p class="assembly-note"><strong>Podgląd przestrzenny:</strong> poniższy model pokazuje rozmieszczenie Arduino Nano, LCD1602 i enkodera KY-040 oraz przebieg przewodów sterujących. To wizualizacja montażowa; dokładne piny są podane w tabelach poniżej.</p>
-    <div class="assembly-controls">
-        <button type="button" onclick="setAssemblyView('iso')">Widok 3D</button>
-        <button type="button" onclick="setAssemblyView('top')">Widok z góry</button>
-        <button type="button" onclick="setAssemblyView('front')">Widok z przodu</button>
-        <button type="button" onclick="resetAssemblyView()">Reset widoku</button>
-    </div>
-    <div class="assembly-stage" id="assemblyStage" aria-label="Interaktywny model montażu Zappera">
-        <div class="assembly-world" id="assemblyWorld">
-            <div class="part3d breadboard3d"></div>
-            <div class="part3d nano3d">ARDUINO NANO</div>
-            <div class="nano-pin3d np-a4">A4 / r9</div>
-            <div class="nano-pin3d np-a5">A5 / r10</div>
-            <div class="nano-pin3d np-5v">5V / r13</div>
-            <div class="nano-pin3d np-lgnd">GND / r15</div>
-            <div class="nano-pin3d np-d9">D9 / r5</div>
-            <div class="nano-pin3d np-d4">D4 / r10</div>
-            <div class="nano-pin3d np-d3">D3 / r11</div>
-            <div class="nano-pin3d np-d2">D2 / r12</div>
-            <div class="nano-pin3d np-rgnd">GND / r13</div>
-            <div class="part3d lcd3d">I2C: GND VCC SDA SCL</div>
-            <div class="part3d encoder3d">KY-040</div>
-            <div class="resistor3d" aria-label="Rezystor 1 kiloohm od D9 przez i5 do i1 i punktu j1"></div>
-            <div class="wire3d w-lcd-gnd" data-from="LCD GND" data-to="a15 / Nano GND"></div>
-            <div class="wire3d w-lcd-vcc" data-from="LCD VCC" data-to="a13 / Nano 5V"></div>
-            <div class="wire3d w-lcd-sda" data-from="LCD SDA" data-to="a9 / Nano A4"></div>
-            <div class="wire3d w-lcd-scl" data-from="LCD SCL" data-to="a10 / Nano A5"></div>
-            <div class="wire3d w-enc-clk" data-from="KY CLK" data-to="j12 / Nano D2"></div>
-            <div class="wire3d w-enc-dt" data-from="KY DT" data-to="j11 / Nano D3"></div>
-            <div class="wire3d w-enc-sw" data-from="KY SW" data-to="j10 / Nano D4"></div>
-            <div class="wire3d w-enc-gnd" data-from="KY GND" data-to="j13 / Nano GND"></div>
-            <div class="wire3d w-enc-vcc" data-from="KY +" data-to="b13 / Nano 5V"></div>
-        </div>
-        <div class="assembly-help">Przeciągnij: obrót • Shift/prawy: przesunięcie • rolka: zoom • dwuklik: reset</div>
-    </div>
-    <div class="assembly-pinmap">
-        <div><strong>LCD1602 I2C</strong><br><code>GND → a15 → Nano GND</code><br><code>VCC → a13 → Nano 5V</code><br><code>SDA → a9 → Nano A4</code><br><code>SCL → a10 → Nano A5</code></div>
-        <div><strong>KY-040</strong><br><code>CLK → j12 → Nano D2</code><br><code>DT → j11 → Nano D3</code><br><code>SW → j10 → Nano D4</code><br><code>+ → b13 → Nano 5V</code><br><code>GND → j13 → Nano GND</code></div>
-        <div><strong>Wyjście testowe</strong><br><code>Nano D9 → i5</code><br><code>rezystor 1 kΩ: i5 → i1</code><br><code>j1 = OUT TEST</code><br><small>Nie pomijaj rezystora.</small></div>
-    </div>
-
-    <div class="wiring-card">
-        <h3>Dokładny schemat — patrz na ten widok przy wpinaniu kabli</h3>
-        <p><strong>USB Arduino jest u góry.</strong> Każda linia kończy się na konkretnym pinie Nano. Oznaczenia <code>a9</code>, <code>j12</code> itd. są dokładnymi otworami płytki stykowej.</p>
-        <div class="wiring-scroll">
-            <svg class="wiring-svg" viewBox="0 0 1000 620" role="img" aria-label="Dokładne połączenia LCD1602, Arduino Nano, KY-040 i rezystora 1 kiloohm">
-                <rect class="board" x="250" y="55" width="500" height="520" rx="18"/>
-                <text class="major" x="500" y="592" text-anchor="middle">PŁYTKA STYKOWA — USB NANO U GÓRY</text>
-
-                <rect class="nano" x="440" y="130" width="120" height="340" rx="9"/>
-                <rect x="468" y="92" width="64" height="45" rx="5" fill="#cfd8dc" stroke="#78909c" stroke-width="3"/>
-                <text class="label" x="500" y="120" text-anchor="middle">USB</text>
-                <text class="major" x="500" y="285" text-anchor="middle" fill="white">ARDUINO</text>
-                <text class="major" x="500" y="310" text-anchor="middle" fill="white">NANO</text>
-
-                <!-- używane piny Nano: lewa strona -->
-                <circle class="pin-used" cx="430" cy="318" r="8"/><text class="label" x="415" y="323" text-anchor="end">A4 · rząd 9</text>
-                <circle class="pin-used" cx="430" cy="342" r="8"/><text class="label" x="415" y="347" text-anchor="end">A5 · rząd 10</text>
-                <circle class="pin-used" cx="430" cy="414" r="8"/><text class="label" x="415" y="419" text-anchor="end">5V · rząd 13</text>
-                <circle class="pin-used" cx="430" cy="462" r="8"/><text class="label" x="415" y="467" text-anchor="end">GND · rząd 15</text>
-
-                <!-- używane piny Nano: prawa strona -->
-                <circle class="pin-used" cx="570" cy="222" r="8"/><text class="label" x="585" y="227">D9 · rząd 5</text>
-                <circle class="pin-used" cx="570" cy="342" r="8"/><text class="label" x="585" y="347">D4 · rząd 10</text>
-                <circle class="pin-used" cx="570" cy="366" r="8"/><text class="label" x="585" y="371">D3 · rząd 11</text>
-                <circle class="pin-used" cx="570" cy="390" r="8"/><text class="label" x="585" y="395">D2 · rząd 12</text>
-                <circle class="pin-used" cx="570" cy="414" r="8"/><text class="label" x="585" y="419">GND · rząd 13</text>
-
-                <!-- LCD -->
-                <rect class="lcd" x="20" y="165" width="180" height="190" rx="8"/>
-                <rect class="lcd-screen" x="42" y="190" width="136" height="72" rx="5"/>
-                <text class="major" x="110" y="230" text-anchor="middle" fill="white">LCD1602</text>
-                <text class="small" x="110" y="285" text-anchor="middle" fill="white">I2C</text>
-                <circle class="pin" cx="200" cy="300" r="7"/><text class="label" x="188" y="305" text-anchor="end" fill="white">GND</text>
-                <circle class="pin" cx="200" cy="320" r="7"/><text class="label" x="188" y="325" text-anchor="end" fill="white">VCC</text>
-                <circle class="pin" cx="200" cy="340" r="7"/><text class="label" x="188" y="345" text-anchor="end" fill="white">SDA</text>
-                <circle class="pin" cx="200" cy="360" r="7"/><text class="label" x="188" y="365" text-anchor="end" fill="white">SCL</text>
-
-                <!-- przewody LCD -->
-                <path class="wire wire-gnd" d="M200 300 H225 V462 H430"/><text class="small" x="260" y="454">a15 → GND</text>
-                <path class="wire wire-vcc" d="M200 320 H235 V414 H430"/><text class="small" x="270" y="405">a13 → 5V</text>
-                <path class="wire wire-sda" d="M200 340 H300 V318 H430"/><text class="small" x="305" y="309">a9 → A4</text>
-                <path class="wire wire-scl" d="M200 360 H325 V342 H430"/><text class="small" x="330" y="334">a10 → A5</text>
-
-                <!-- KY-040 -->
-                <rect class="encoder" x="805" y="170" width="175" height="230" rx="8"/>
-                <circle class="knob" cx="895" cy="230" r="43"/>
-                <text class="major" x="895" y="300" text-anchor="middle" fill="white">KY-040</text>
-                <circle class="pin" cx="805" cy="320" r="7"/><text class="label" x="818" y="325" fill="white">CLK</text>
-                <circle class="pin" cx="805" cy="340" r="7"/><text class="label" x="818" y="345" fill="white">DT</text>
-                <circle class="pin" cx="805" cy="360" r="7"/><text class="label" x="818" y="365" fill="white">SW</text>
-                <circle class="pin" cx="805" cy="380" r="7"/><text class="label" x="818" y="385" fill="white">+</text>
-                <circle class="pin" cx="805" cy="400" r="7"/><text class="label" x="818" y="405" fill="white">GND</text>
-
-                <!-- przewody KY-040 -->
-                <path class="wire wire-clk" d="M805 320 H735 V390 H570"/><text class="small" x="690" y="382">j12 → D2</text>
-                <path class="wire wire-dt" d="M805 340 H715 V366 H570"/><text class="small" x="670" y="358">j11 → D3</text>
-                <path class="wire wire-sw" d="M805 360 H695 V342 H570"/><text class="small" x="650" y="334">j10 → D4</text>
-                <path class="wire wire-gnd" d="M805 400 H675 V414 H570"/><text class="small" x="650" y="435">j13 → GND</text>
-                <path class="wire wire-vcc" d="M805 380 H785 V520 H390 V414 H430"/><text class="small" x="545" y="512">b13 → 5V</text>
-
-                <!-- rezystor 1 kΩ i wyjście testowe -->
-                <path class="wire wire-out" d="M570 222 H670 V205"/>
-                <rect class="resistor-body" x="656" y="155" width="28" height="50" rx="8"/>
-                <path class="wire wire-out" d="M670 155 V125 H755"/>
-                <circle cx="670" cy="222" r="7" fill="#ffcc80" stroke="#ef6c00" stroke-width="3"/>
-                <circle cx="670" cy="125" r="7" fill="#ffcc80" stroke="#ef6c00" stroke-width="3"/>
-                <rect class="endpoint" x="752" y="103" width="132" height="44"/>
-                <text class="label" x="818" y="121" text-anchor="middle">j1 = OUT TEST</text>
-                <text class="small" x="818" y="139" text-anchor="middle">punkt pomiarowy</text>
-                <text class="label" x="690" y="178">1 kΩ</text>
-                <text class="small" x="680" y="239">i5</text>
-                <text class="small" x="680" y="118">i1</text>
-            </svg>
-        </div>
-    </div>
-
     <div class="table-wrap"><table class="connection-table">
         <tr><th>Element</th><th>Pin modułu</th><th>Otwór płytki</th><th>Pin Arduino Nano</th></tr>
         <tr><td>LCD1602</td><td>GND</td><td><code>a15</code></td><td><code>GND</code> — rząd 15 po lewej</td></tr>
@@ -1492,125 +1321,6 @@ void updateProgressBar() {
     });
     ro.observe(viewer);
     requestAnimationFrame(fitToViewer);
-})();
-
-(function () {
-    const stage = document.getElementById('assemblyStage');
-    const world = document.getElementById('assemblyWorld');
-    if (!stage || !world) return;
-
-    const state = {
-        rotX: 54,
-        rotZ: -12,
-        scale: 0.92,
-        panX: 0,
-        panY: 0,
-        dragging: false,
-        panning: false,
-        pointerId: null,
-        lastX: 0,
-        lastY: 0
-    };
-
-    function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    function applyTransform() {
-        world.style.transform =
-            'translate3d(' + state.panX + 'px,' + state.panY + 'px,0) ' +
-            'rotateX(' + state.rotX + 'deg) ' +
-            'rotateZ(' + state.rotZ + 'deg) ' +
-            'scale(' + state.scale + ')';
-    }
-
-    window.setAssemblyView = function (view) {
-        state.panX = 0;
-        state.panY = 0;
-        state.scale = 0.92;
-        if (view === 'top') {
-            state.rotX = 0;
-            state.rotZ = 0;
-        } else if (view === 'front') {
-            state.rotX = 72;
-            state.rotZ = 0;
-        } else {
-            state.rotX = 54;
-            state.rotZ = -12;
-        }
-        applyTransform();
-    };
-
-    window.resetAssemblyView = function () {
-        state.rotX = 54;
-        state.rotZ = -12;
-        state.scale = 0.92;
-        state.panX = 0;
-        state.panY = 0;
-        applyTransform();
-    };
-
-    stage.addEventListener('contextmenu', function (event) {
-        event.preventDefault();
-    });
-
-    stage.addEventListener('pointerdown', function (event) {
-        state.dragging = true;
-        state.panning = event.button === 2 || event.shiftKey;
-        state.pointerId = event.pointerId;
-        state.lastX = event.clientX;
-        state.lastY = event.clientY;
-        stage.classList.add('dragging');
-        stage.setPointerCapture(event.pointerId);
-        event.preventDefault();
-    });
-
-    stage.addEventListener('pointermove', function (event) {
-        if (!state.dragging || event.pointerId !== state.pointerId) return;
-        const dx = event.clientX - state.lastX;
-        const dy = event.clientY - state.lastY;
-        state.lastX = event.clientX;
-        state.lastY = event.clientY;
-
-        if (state.panning || event.shiftKey) {
-            state.panX += dx;
-            state.panY += dy;
-        } else {
-            state.rotZ += dx * 0.45;
-            state.rotX = clamp(state.rotX - dy * 0.45, -85, 85);
-        }
-        applyTransform();
-        event.preventDefault();
-    });
-
-    function endDrag(event) {
-        if (!state.dragging) return;
-        if (event && state.pointerId !== null && event.pointerId !== state.pointerId) return;
-        state.dragging = false;
-        state.panning = false;
-        stage.classList.remove('dragging');
-        if (event && stage.hasPointerCapture && stage.hasPointerCapture(event.pointerId)) {
-            stage.releasePointerCapture(event.pointerId);
-        }
-        state.pointerId = null;
-    }
-
-    stage.addEventListener('pointerup', endDrag);
-    stage.addEventListener('pointercancel', endDrag);
-
-    stage.addEventListener('wheel', function (event) {
-        const factor = event.deltaY < 0 ? 1.08 : 0.92;
-        state.scale = clamp(state.scale * factor, 0.45, 1.8);
-        applyTransform();
-        event.preventDefault();
-    }, { passive: false });
-
-    stage.addEventListener('dblclick', function (event) {
-        window.resetAssemblyView();
-        event.preventDefault();
-    });
-
-    applyTransform();
 })();
 
 (async function loadCurrentFirmware() {

@@ -5,7 +5,22 @@
   if (!ctx) return;
   const scene = document.getElementById('wiring3dScene');
   let labelQueue = [];
+  let viewRect = null;   // rozmiar płótna liczony raz na klatkę zamiast przy każdym rzucie punktu
   const font = 'Segoe UI, Arial, sans-serif';
+
+  // Teksty na płótnie pochodzą z ukrytego #wiring3dText w instrukcji, więc tłumaczy je
+  // ten sam guide-i18n.js co resztę strony (i check_i18n.py pilnuje ich we wszystkich językach).
+  const textHost = document.getElementById('wiring3dText');
+  const hasTextHost = !!(textHost && typeof textHost.querySelector === 'function');
+  function tr(key, fallback){
+    const el = hasTextHost ? textHost.querySelector(`[data-k="${key}"]`) : null;
+    const value = el ? el.textContent.replace(/\s+/g,' ').trim() : '';
+    return value || fallback;
+  }
+  function upper(text){
+    const lang = (document.documentElement && document.documentElement.lang) || undefined;
+    try { return text.toLocaleUpperCase(lang); } catch (_) { return text.toUpperCase(); }
+  }
 
   const state = {
     yaw: -0.34,
@@ -57,11 +72,33 @@
     const z2=y*sp + z*cp;
     return v(x,y2,z2);
   }
+  // Położenie kamery w układzie sceny: punkt, który po obrocie trafia w (0,0,1100).
+  function camera(){
+    const cy=Math.cos(state.yaw), sy=Math.sin(state.yaw), cp=Math.cos(state.pitch), sp=Math.sin(state.pitch);
+    return v(-1100*cp*sy, 1100*sp, 1100*cp*cy);
+  }
+  const depth=p=>rot(p).z;   // większa wartość = bliżej kamery
+  // Płaskie przesłony: breadboard (górna płaszczyzna) i płytki obu modułów.
+  // Punkt jest zasłonięty, gdy odcinek kamera→punkt przecina prostokąt przesłony.
+  const OCCLUDERS=[
+    {x0:-170,x1:170,y0:-315,y1:315,z:0},
+    {x0:-690,x1:-350,y0:-166,y1:6,z:125},
+    {x0:417.5,x1:652.5,y0:-180,y1:70,z:130}
+  ];
+  function occluded(p){
+    const c=state.cam||camera();
+    for(const o of OCCLUDERS){
+      if((c.z-o.z)*(p.z-o.z)>=0)continue;
+      const t=(o.z-c.z)/(p.z-c.z),x=c.x+(p.x-c.x)*t,y=c.y+(p.y-c.y)*t;
+      if(x>o.x0&&x<o.x1&&y>o.y0&&y<o.y1)return true;
+    }
+    return false;
+  }
   function project(p){
     const r=rot(p);
     const f=900;
     const d=Math.max(260,1100 - r.z);
-    const rect=canvas.getBoundingClientRect();
+    const rect=viewRect||canvas.getBoundingClientRect();
     // Automatyczne dopasowanie do mniejszych okien. Zoom użytkownika działa dalej ponad tym skalowaniem.
     const responsiveFit=Math.max(.1,Math.min(1,Math.min(rect.width/1180,rect.height/760)));
     const s=(f/d)*state.zoom*responsiveFit;
@@ -118,18 +155,30 @@
       ctx.lineTo(q[q.length-1].x,q[q.length-1].y);
     };
     const path=()=>trace(q);
-    const focus=focusId(),dim=focus!==null&&focus!==currentConn;
-    // Cień rzucany na blat / płytkę pod przewodem — dzięki niemu kabel nie „wisi” w powietrzu.
-    const ground=raised.map(p=>project(v(p.x+5,p.y+8,Math.abs(p.x)<B.w/2&&Math.abs(p.y)<B.h/2?3:Math.max(-28,p.z-46))));
-    drawnWires.push({id:currentConn,q,color,width,path});
-    ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
-    if(dim) ctx.globalAlpha=.16;
-    else{
-      trace(ground);
-      ctx.strokeStyle='rgba(24,40,52,.05)';ctx.lineWidth=width+2;ctx.shadowColor='rgba(24,40,52,.20)';ctx.shadowBlur=9;ctx.stroke();ctx.shadowColor='transparent';
-    }
-    tube(path,color,width);
-    ctx.restore();
+    const id=currentConn,ends=[raised[0],raised[raised.length-1]];
+    drawnWires.push({id,q,color,width,path,ends});
+    // Przewód jest tylko przygotowany; maluje go render() we właściwej kolejności głębokości.
+    const centre=raised.reduce((s,p)=>v(s.x+p.x/raised.length,s.y+p.y/raised.length,s.z+p.z/raised.length),v(0,0,0));
+    const paint=()=>{
+      const focus=focusId();
+      ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+      if(focus===id){
+        // Wybrane połączenie: poświata + grubsza izolacja, ale nadal przesłaniane przez płytki.
+        path();ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=width+7;ctx.shadowColor=color;ctx.shadowBlur=16;ctx.stroke();ctx.shadowColor='transparent';
+        tube(path,color,width+1.5);
+      }else{
+        if(focus!==null) ctx.globalAlpha=.16;
+        else if(state.cam.z>0){
+          // Cień rzucany na blat / płytkę pod przewodem — dzięki niemu kabel nie „wisi” w powietrzu.
+          const ground=raised.map(p=>project(v(p.x+5,p.y+8,Math.abs(p.x)<B.w/2&&Math.abs(p.y)<B.h/2?3:Math.max(-28,p.z-46))));
+          trace(ground);
+          ctx.strokeStyle='rgba(24,40,52,.05)';ctx.lineWidth=width+2;ctx.shadowColor='rgba(24,40,52,.20)';ctx.shadowBlur=9;ctx.stroke();ctx.shadowColor='transparent';
+        }
+        tube(path,color,width);
+      }
+      ctx.restore();
+    };
+    return {depth:depth(centre),paint};
   }
   // Izolacja przewodu: ciemny obrys, kolor, półcień od spodu i połysk od góry.
   function tube(path,color,width){
@@ -143,13 +192,14 @@
     ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
     const ring=(q,color)=>{ctx.beginPath();ctx.arc(q.x,q.y,8,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.95)';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
       ctx.beginPath();ctx.arc(q.x,q.y,3,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};
+    // Sam przewód jest już podświetlony na swoim miejscu w scenie; tu tylko znaczniki
+    // widocznych końcówek (końcówka schowana za płytką nie przebija się na wierzch).
     for(const w of drawnWires){
       if(w.id!==focus)continue;
-      w.path();ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=w.width+7;ctx.shadowColor=w.color;ctx.shadowBlur=16;ctx.stroke();ctx.shadowColor='transparent';
-      tube(w.path,w.color,w.width+1.5);
-      ring(w.q[0],w.color);ring(w.q[w.q.length-1],w.color);
+      if(!occluded(w.ends[0]))ring(w.q[0],w.color);
+      if(!occluded(w.ends[1]))ring(w.q[w.q.length-1],w.color);
     }
-    if(focus==='res'){
+    if(focus==='res'&&!occluded(v(colX.I,rowY(3),30))){
       // Rezystor nie jest przewodem: podświetlamy jego dwa otwory i5 / i1.
       const a=project(v(colX.I,rowY(5),30)),b=project(v(colX.I,rowY(1),30));
       ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle='rgba(239,108,0,.85)';ctx.lineWidth=5;ctx.shadowColor=C.out;ctx.shadowBlur=16;ctx.stroke();ctx.shadowColor='transparent';
@@ -171,6 +221,8 @@
     const seen=new Set(),items=[];
     for(const {p,text,opts} of labelQueue){
       const key=text+JSON.stringify(p);if(seen.has(key))continue;seen.add(key);
+      // Opis punktu schowanego za płytką (np. otworów breadboardu w widoku od tyłu) nie jest pokazywany.
+      if(occluded(p))continue;
       const q=project(p),size=Math.max(7,(opts.size||13)*Math.min(1,rect.width/950));
       if(q.x < -20 || q.x > rect.width+20 || q.y < 80 || q.y > rect.height+20)continue;
       ctx.font=`${opts.bold===false?'500':'600'} ${size}px ${font}`;
@@ -192,6 +244,11 @@
     };
     const hits=(x,y,w,h)=>occupied.some(r=>Math.abs(x-r.x)<(w+r.w)/2+3&&Math.abs(y-r.y)<(h+r.h)/2+3);
     const top=96,bottom=rect.height-10;
+    // Rzut płytek LCD i KY-040 na ekran: kolumny opisów omijają je w pionie.
+    const modules=[[-520,-80,125,340,172],[535,-55,130,235,250]].map(([cx,cy,cz,w,h])=>{
+      const c=[];for(const x of [cx-w/2,cx+w/2])for(const y of [cy-h/2,cy+h/2])for(const z of [cz-8,cz+8])c.push(project(v(x,y,z)));
+      return {x0:Math.min(...c.map(p=>p.x)),x1:Math.max(...c.map(p=>p.x)),y0:Math.min(...c.map(p=>p.y)),y1:Math.max(...c.map(p=>p.y))};
+    });
 
     // 1. Opisy otworów płytki: dwie kolumny po bokach breadboardu, posortowane w pionie,
     //    każdy z linią prowadzącą — nigdy nie nachodzą na siebie ani na płytkę.
@@ -204,9 +261,17 @@
       const maxW=Math.max(...group.map(item=>item.w));
       let column=toLeft?Math.min(...corners,...group.map(item=>item.q.x))-26:Math.max(...corners,...group.map(item=>item.q.x))+26;
       column=toLeft?Math.max(maxW+8,column):Math.min(rect.width-maxW-8,column);
-      let y=-Infinity;const ys=group.map(item=>{y=Math.max(item.q.y,y+item.h+gap);return y;});
+      // Zwraca nowe y pod modułem, jeśli opis (o swojej szerokości) wszedłby na płytkę LCD/KY-040.
+      const free=(item,y)=>{
+        const x0=toLeft?column-item.w:column,x1=toLeft?column:column+item.w;
+        for(const r of modules)if(x0<r.x1&&x1>r.x0&&y+item.h/2>r.y0-gap&&y-item.h/2<r.y1+gap)return r.y1+gap+item.h/2;
+        return null;
+      };
+      let y=-Infinity;const ys=group.map(item=>{y=Math.max(item.q.y,y+item.h+gap);for(let n,i=0;i<4&&(n=free(item,y))!==null;i++)y=n;return y;});
       const overflow=ys[ys.length-1]+group[group.length-1].h/2-bottom;
-      const shift=overflow>0?Math.min(overflow,Math.max(0,ys[0]-group[0].h/2-top)):0;
+      let shift=overflow>0?Math.min(overflow,Math.max(0,ys[0]-group[0].h/2-top)):0;
+      // Dociągnięcie w górę nie może wepchnąć kolumny z powrotem na moduł.
+      if(shift&&group.some((item,i)=>free(item,ys[i]-shift)!==null))shift=0;
       group.forEach((item,i)=>paint(item,toLeft?column-item.w/2:column+item.w/2,ys[i]-shift));
     }
     // 2. Opisy modułów i przewodów: przesuwane w pionie, aż znajdą wolne miejsce.
@@ -291,14 +356,20 @@
     line(points,color,1.1);
     for(const p of [points[0],points[points.length-1]])circle3(p,2.2,color,null);
   }
-  function projectedText(p,text,size,color,align='center'){
+  function projectedText(p,text,size,color,align='center',maxWidth){
     const q=project(p),x=project(v(p.x+1,p.y,p.z)),y=project(v(p.x,p.y+1,p.z));
     const facing=rot(v(0,0,1)).z>=0?1:-1;
     ctx.save();ctx.transform((x.x-q.x)*facing,(x.y-q.y)*facing,y.x-q.x,y.y-q.y,q.x,q.y);
-    ctx.font=`600 ${size}px ${font}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(text,0,0);ctx.restore();
+    ctx.font=`600 ${size}px ${font}`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;if(maxWidth)ctx.fillText(text,0,0,maxWidth);else ctx.fillText(text,0,0);ctx.restore();
   }
-  function drawBreadboard(){
+  function drawBreadboard(topVisible){
     box(0,0,-14,B.w,B.h,28,C.board,C.boardEdge);
+    if(!topVisible){
+      // Spód płytki: taśma klejąca zasłania wszystko, co jest wpięte od góry.
+      poly([v(B.x+8,B.y+8,-28.4),v(B.x+B.w-8,B.y+8,-28.4),v(B.x+B.w-8,B.y+B.h-8,-28.4),v(B.x+8,B.y+B.h-8,-28.4)],'#eeebe1','#d4d0c3',1);
+      for(const y of [-150,0,150])line([v(B.x+14,y,-28.6),v(B.x+B.w-14,y,-28.6)],'rgba(150,145,128,.25)',1);
+      return;
+    }
     // Moulded edge and individual recessed sockets, without changing the A–J grid.
     for(const x of [-164,164])line([v(x,-300,1),v(x,300,1)],'#ffffff',1.5);
     // central trench
@@ -343,8 +414,8 @@
     circle3(v(colX.I,rowY(1),11),7,'#fff3e0',C.out,3);
     circle3(v(colX.J,rowY(1),11),7,'#fff3e0',C.out,3);
     label(v(colX.I,rowY(5),18),'i5 · D9/H5',{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
-    label(v(colX.I,rowY(1),18),'i1 · rezystor',{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
-    label(v(colX.J,rowY(1),18),'j1 · czerwony OUT',{size:10,bg:'#fff8e1',stroke:C.out,dx:0,dy:-34,conn:'out-red'});
+    label(v(colX.I,rowY(1),18),tr('i1','i1 · rezystor'),{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
+    label(v(colX.J,rowY(1),18),tr('j1','j1 · czerwony OUT'),{size:10,bg:'#fff8e1',stroke:C.out,dx:0,dy:-34,conn:'out-red'});
   }
 
   function drawBoardConnector(col,row,color,text,opts={}){
@@ -360,20 +431,22 @@
     label(v(x,y,49),text,{size:10,bg:'#fff',stroke:color,side:'ABCDE'.includes(col)?'L':'R',conn:opts.conn});
   }
 
-  function drawBoardConnectors(){
-    // Lewa połowa A–E: te otwory są połączone poziomo z pinami Nano w kolumnie D.
-    drawBoardConnector('A',9,C.green,'a9 · SDA',{conn:'lcd-sda'});
-    drawBoardConnector('A',10,C.blue,'a10 · SCL',{conn:'lcd-scl'});
-    drawBoardConnector('A',13,C.red,'a13 · LCD VCC',{conn:'lcd-vcc'});
-    drawBoardConnector('B',13,C.red,'b13 · KY +',{conn:'ky-vcc'});
-    drawBoardConnector('A',15,C.black,'a15 · LCD GND',{conn:'lcd-gnd'});
-    drawBoardConnector('B',15,C.black,'b15 · CZARNY',{conn:'out-black'});
-
-    // Prawa połowa F–J: te otwory są połączone poziomo z prawą listwą Nano w kolumnie H.
-    drawBoardConnector('J',10,C.cyan,'j10 · SW',{conn:'ky-sw'});
-    drawBoardConnector('J',11,C.purple,'j11 · DT',{conn:'ky-dt'});
-    drawBoardConnector('J',12,C.orange,'j12 · CLK',{conn:'ky-clk'});
-    drawBoardConnector('J',13,C.black,'j13 · KY GND',{conn:'ky-gnd'});
+  // Każdy wtyk jest osobnym obiektem sceny, sortowanym razem z przewodami i Nano.
+  function boardConnectorItems(){
+    return [
+      // Lewa połowa A–E: te otwory są połączone poziomo z pinami Nano w kolumnie D.
+      ['A',9,C.green,'a9 · SDA','lcd-sda'],
+      ['A',10,C.blue,'a10 · SCL','lcd-scl'],
+      ['A',13,C.red,'a13 · LCD VCC','lcd-vcc'],
+      ['B',13,C.red,'b13 · KY +','ky-vcc'],
+      ['A',15,C.black,'a15 · LCD GND','lcd-gnd'],
+      ['B',15,C.black,tr('b15','b15 · czarny'),'out-black'],
+      // Prawa połowa F–J: te otwory są połączone poziomo z prawą listwą Nano w kolumnie H.
+      ['J',10,C.cyan,'j10 · SW','ky-sw'],
+      ['J',11,C.purple,'j11 · DT','ky-dt'],
+      ['J',12,C.orange,'j12 · CLK','ky-clk'],
+      ['J',13,C.black,'j13 · KY GND','ky-gnd']
+    ].map(([col,row,color,text,conn])=>({depth:depth(v(colX[col],rowY(row),25)),paint:()=>drawBoardConnector(col,row,color,text,{conn})}));
   }
 
   function drawNano(){
@@ -426,21 +499,29 @@
     });
     line([v(x-7,y1+20,z+11),v(x-7,y5-20,z+11)],'rgba(255,255,255,.35)',1.4);
     label(v(x,(y1+y5)/2,z+34),'1 kΩ · i5 → i1',{size:10,bg:'#fff8e1',stroke:C.out,side:'R',conn:'res'});
+  }
 
+  // Przewody wyjściowe i krokodylki: kolejność wywołań wire() jest stała (test zacisków),
+  // a malowanie odbywa się później, posortowane po głębokości.
+  function outputItems(){
+    const y1=rowY(1),items=[];
     // Czerwony krokodylek: wyjście z j1, wysoko nad KY-040.
     const redY=y1-48;
     currentConn='out-red';
-    wire([v(colX.J,y1,12),v(260,redY,58),v(420,redY,58)],C.out,5);
-    label(v(310,redY,68),'j1 → czerwony krokodylek',{size:10,bg:'#fff3e0',stroke:C.out,dy:-22,conn:'out-red'});
-    drawClip(v(475,redY,58),C.red,'CZERWONY');
+    items.push(wire([v(colX.J,y1,12),v(260,redY,58),v(420,redY,58)],C.out,5));
+    label(v(310,redY,68),tr('redLead','j1 → czerwony krokodylek'),{size:10,bg:'#fff3e0',stroke:C.out,dy:-22,conn:'out-red'});
+    const red=v(475,redY,58);
+    items.push({depth:depth(red),paint:()=>drawClip(red,C.red,upper(tr('red','czerwony')))});
 
     // Czarny krokodylek: osobna dolna trasa, daleko pod KY-040.
     const blackY=rowY(28)+46;
     currentConn='out-black';
-    wire([v(colX.B,rowY(15),38),v(250,blackY,38),v(420,blackY,38)],C.black,5);
-    label(v(305,blackY,48),'b15 → czarny krokodylek',{size:10,bg:'#fff',stroke:'#777',dy:-22,conn:'out-black'});
+    items.push(wire([v(colX.B,rowY(15),38),v(250,blackY,38),v(420,blackY,38)],C.black,5));
+    label(v(305,blackY,48),tr('blackLead','b15 → czarny krokodylek'),{size:10,bg:'#fff',stroke:'#777',dy:-22,conn:'out-black'});
     currentConn=null;
-    drawClip(v(475,blackY,38),C.black,'CZARNY');
+    const black=v(475,blackY,38);
+    items.push({depth:depth(black),paint:()=>drawClip(black,C.black,upper(tr('black','czarny')))});
+    return items;
   }
 
   function drawClip(p,color,text){
@@ -451,138 +532,141 @@
     poly([v(p.x+17,p.y-7,p.z-4),v(p.x+43,p.y-1,p.z-4),v(p.x+49,p.y+3,p.z-4),v(p.x+17,p.y+8,p.z-4)],'#8a9fa9','#4f6572',.8);
     line([v(p.x+22,p.y+2,p.z+1),v(p.x+44,p.y+1,p.z+1)],'#354b58',1);
     for(let i=0;i<4;i++)line([v(p.x-41+i*11,p.y-9,p.z+11),v(p.x-41+i*11,p.y+9,p.z+11)],'rgba(255,255,255,.15)',1);
-    projectedText(v(p.x-23,p.y,p.z+11),text,8,'#fff');
+    projectedText(v(p.x-23,p.y,p.z+11),text,8,'#fff','center',56);
   }
 
-  function drawLCD(){
-    const cx=-520, cy=-80, z=125, w=340, h=172;
+  // --- LCD1602: geometria pinów, spód (listwa, backpack I2C) i płytka z ekranem ---
+  const LCD={cx:-520,cy:-80,z:125,w:340,h:172};
+  const LCD_PIN_NAMES=['GND','VCC','SDA','SCL'];
+  const LCD_PIN_COLORS=[C.black,C.red,C.green,C.blue];
+  // Strona z ekranem jest widoczna, gdy kamera jest nad płaszczyzną płytki (spójne z kolejnością rysowania).
+  const lcdFront=()=>state.cam.z>LCD.z;
+  function lcdPins(){
+    const ax=LCD.cx+122, ay=LCD.cy+6;
+    return LCD_PIN_NAMES.map((_,i)=>v(ax-39+i*26,ay+56,LCD.z-66));
+  }
+  function drawLCDUnder(){
+    const {cx,cy,z}=LCD, frontVisible=lcdFront();
     // Underside header leads remain connected to the same I2C terminals in front view.
     for(let i=0;i<4;i++){
       const px=cx+122-39+i*26,py=cy+6+56;
       box(px,py,z-35,5,5,58,C.gold,'#716034');
       box(px,py,z-59,13,15,14,'#2f3d42','#121f25');
     }
-    box(cx,cy,z,w,h,12,C.lcd,C.lcdEdge);
-    const frontVisible=rot(v(0,0,1)).z>=0;
-    for(const dx of [-w/2+13,w/2-13]) for(const dy of [-h/2+13,h/2-13]) solder(v(cx+dx,cy+dy,z+8),6);
-    for(let i=0;i<16;i++)solder(v(cx-110+i*14,cy-h/2+9,z+8),3.1);
-    if(frontVisible){
-      box(cx,cy-5,z+16,w-42,h-48,23,'#263746','#102331');
-      poly([v(cx-w/2+28,cy-h/2+28,z+9),v(cx+w/2-28,cy-h/2+28,z+9),v(cx+w/2-28,cy+h/2-38,z+9),v(cx-w/2+28,cy+h/2-38,z+9)],'#1e4d95','#101f34',2);
-      for(let row=0;row<2;row++)for(let col=0;col<16;col++){
-        const x=cx-124+col*16,y=cy-36+row*31;
-        poly([v(x,y,z+17),v(x+11,y,z+17),v(x+11,y+22,z+17),v(x,y+22,z+17)],'rgba(129,181,255,.12)',null);
-      }
-      'ZAPPER v5'.split('').forEach((ch,i)=>{if(ch!==' ')projectedText(v(cx-124+i*16+5.5,cy-36+11,z+18),ch,17,'rgba(226,240,255,.92)');});
-      projectedText(v(cx,cy+65,z+9),'LCD1602  ·  I2C',14,'#d0e7d7');
-      label(v(cx,cy+46,z+14),'LCD1602 16×2',{size:13,bg:'rgba(23,134,77,.9)',color:'#fff',stroke:C.lcdEdge});
-    }
+    if(frontVisible)return;
     // back I2C adapter and header are visible when the model is turned around
     const ax=cx+122, ay=cy+6;
-    if(!frontVisible){
-      box(ax,ay,z-18,104,126,12,'#1c1f20','#050606');
-      box(ax+24,ay-24,z-30,26,26,8,'#1565c0','#0d3c73');
-      // drobne elementy i pola lutownicze backpacka — żeby tył nie był pustym prostokątem
-      box(ax-20,ay-22,z-29,34,18,7,'#262b2e','#111');
-      box(ax-28,ay+4,z-29,18,10,6,'#b7a46a','#6f623b');
-      box(ax+2,ay+4,z-29,18,10,6,'#b7a46a','#6f623b');
-      for(let s=0;s<8;s++){
-        const sx=ax-42+s*12;
-        circle3(v(sx,ay-50,z-25),3.7,'#cbd1d4','#6d7478',1.2);
-        circle3(v(sx,ay-50,z-26),1.7,C.gold,'#80651e',.8);
-      }
-      silkText(v(ax,ay+28,z-32),'PCF8574 · I2C',{size:8,color:'#eef8fc'});
+    box(ax,ay,z-18,104,126,12,'#1c1f20','#050606');
+    box(ax+24,ay-24,z-30,26,26,8,'#1565c0','#0d3c73');
+    // drobne elementy i pola lutownicze backpacka — żeby tył nie był pustym prostokątem
+    box(ax-20,ay-22,z-29,34,18,7,'#262b2e','#111');
+    box(ax-28,ay+4,z-29,18,10,6,'#b7a46a','#6f623b');
+    box(ax+2,ay+4,z-29,18,10,6,'#b7a46a','#6f623b');
+    for(let s=0;s<8;s++){
+      const sx=ax-42+s*12;
+      circle3(v(sx,ay-50,z-25),3.7,'#cbd1d4','#6d7478',1.2);
+      circle3(v(sx,ay-50,z-26),1.7,C.gold,'#80651e',.8);
     }
+    silkText(v(ax,ay+28,z-32),'PCF8574 · I2C',{size:8,color:'#eef8fc'});
     // Cztery prawdziwie wyglądające goldpiny: plastikowa listwa + lut + długi pin.
-    const pinNames=['GND','VCC','SDA','SCL'];
-    const pinColors=[C.black,C.red,C.green,C.blue];
-    const pinPos=[];
     for(let i=0;i<4;i++){
       const py=ay+56, px=ax-39+i*26;
-      if(!frontVisible){
-        box(px,py,z-22,18,14,11,'#111415','#030404');
-        circle3(v(px,py,z-14),7,'#cbd1d4','#687176',1.6);
-        circle3(v(px,py,z-15),2.6,C.gold,'#80651e',1);
-        box(px,py,z-40,6,6,50,C.gold,'#80651e');
-        silkText(v(px,py-13,z-24),pinNames[i],{size:7,color:pinColors[i]});
-      }
-      pinPos.push(v(px,py,z-66));
-      if(!frontVisible) label(v(px,py,z-69),pinNames[i],{size:9,bg:'#fff',stroke:pinColors[i],dy:20});
+      box(px,py,z-22,18,14,11,'#111415','#030404');
+      circle3(v(px,py,z-14),7,'#cbd1d4','#687176',1.6);
+      circle3(v(px,py,z-15),2.6,C.gold,'#80651e',1);
+      box(px,py,z-40,6,6,50,C.gold,'#80651e');
+      silkText(v(px,py-13,z-24),LCD_PIN_NAMES[i],{size:7,color:LCD_PIN_COLORS[i]});
+      label(v(px,py,z-69),LCD_PIN_NAMES[i],{size:9,bg:'#fff',stroke:LCD_PIN_COLORS[i],dy:20});
     }
-    return { pinPos, pinNames };
+  }
+  function drawLCDBoard(){
+    const {cx,cy,z,w,h}=LCD, frontVisible=lcdFront();
+    box(cx,cy,z,w,h,12,C.lcd,C.lcdEdge);
+    for(const dx of [-w/2+13,w/2-13]) for(const dy of [-h/2+13,h/2-13]) solder(v(cx+dx,cy+dy,z+8),6);
+    for(let i=0;i<16;i++)solder(v(cx-110+i*14,cy-h/2+9,z+8),3.1);
+    if(!frontVisible)return;
+    box(cx,cy-5,z+16,w-42,h-48,23,'#263746','#102331');
+    poly([v(cx-w/2+28,cy-h/2+28,z+9),v(cx+w/2-28,cy-h/2+28,z+9),v(cx+w/2-28,cy+h/2-38,z+9),v(cx-w/2+28,cy+h/2-38,z+9)],'#1e4d95','#101f34',2);
+    for(let row=0;row<2;row++)for(let col=0;col<16;col++){
+      const x=cx-124+col*16,y=cy-36+row*31;
+      poly([v(x,y,z+17),v(x+11,y,z+17),v(x+11,y+22,z+17),v(x,y+22,z+17)],'rgba(129,181,255,.12)',null);
+    }
+    'ZAPPER v5'.split('').forEach((ch,i)=>{if(ch!==' ')projectedText(v(cx-124+i*16+5.5,cy-36+11,z+18),ch,17,'rgba(226,240,255,.92)');});
+    projectedText(v(cx,cy+65,z+9),'LCD1602  ·  I2C',14,'#d0e7d7');
+    // Opis modułu stoi nad górną krawędzią płytki, a nie na ekranie.
+    label(v(cx-70,cy-h/2,z+6),'LCD1602 16×2',{size:13,bg:'rgba(23,134,77,.9)',color:'#fff',stroke:C.lcdEdge,dy:-26});
   }
 
-  function drawKY(){
-    const cx=535, cy=-55, z=130, w=235, h=250;
+  // --- KY-040: geometria pinów, spód (listwa, luty) i płytka z gałką ---
+  const KY={cx:535,cy:-55,z:130,w:235,h:250};
+  const KY_PIN_NAMES=['GND','+','SW','DT','CLK'];
+  const KY_PIN_COLORS=[C.black,C.red,C.cyan,C.purple,C.orange];
+  const kyFront=()=>state.cam.z>KY.z;
+  function kyPins(){
+    return KY_PIN_NAMES.map((_,i)=>v(KY.cx-78+i*39,KY.cy+104,KY.z-68));
+  }
+  function drawKYUnder(){
+    const {cx,cy,z}=KY, frontVisible=kyFront();
     for(let i=0;i<5;i++){
       const px=cx-78+i*39,py=cy+104;
       box(px,py,z-37,5,5,60,C.gold,'#716034');
       box(px,py,z-61,14,16,14,'#2f3d42','#121f25');
     }
-    box(cx,cy,z,w,h,14,C.ky,C.kyEdge);
-    for(const dx of [-w/2+17,w/2-17])for(const dy of [-h/2+17,h/2-17])solder(v(cx+dx,cy+dy,z+8),7);
-    const frontVisible=rot(v(0,0,1)).z>=0;
-    if(frontVisible){
-      box(cx,cy-32,z+25,135,125,35,'#b9c5c9','#617782');
-      for(const dx of [-55,55])box(cx+dx,cy-32,z+45,9,81,5,'#8e9fa7','#516773');
-      cylinder(cx,cy-32,z+43,46,12,'#c1cbd1');
-      cylinder(cx,cy-32,z+55,25,48,'#c1cbd1',true);
-      line([v(cx-16,cy-32,z+104),v(cx+16,cy-32,z+104)],'#6f838e',2);
-      for(let i=0;i<3;i++)smd(cx-49+i*48,cy+57,z+13,20,10);
-      projectedText(v(cx,cy+81,z+9),'KY-040',18,'#e0e8df');
-      const faceNames=['GND','+','SW','DT','CLK'];
-      for(let i=0;i<5;i++){
-        const x=cx-78+i*39;solder(v(x,cy+104,z+9),5);
-        projectedText(v(x,cy+91,z+10),faceNames[i],8,'#c4d8d1');
-        circuitTrace([v(x,cy+102,z+8),v(x,cy+68,z+8),v(cx+(i-2)*19,cy+43,z+8)]);
-      }
-      label(v(cx,cy+65,z+18),'KY-040',{size:14,bg:'rgba(20,20,20,.9)',color:'#fff',stroke:'#444'});
-    }
+    if(frontVisible)return;
     // Tył KY-040: pola lutownicze, plastikowa listwa i wystające goldpiny.
-    const names=['GND','+','SW','DT','CLK'];
-    const pinColors=[C.black,C.red,C.cyan,C.purple,C.orange];
-    const pins=[];
-    if(!frontVisible){
-      box(cx,cy+104,z-22,196,20,11,'#111415','#030404');
-      // kilka małych elementów od strony lutów dla większego realizmu
-      box(cx-52,cy+18,z-19,28,13,6,'#30363a','#111');
-      box(cx+8,cy+18,z-19,22,12,6,'#b5a26d','#6b603f');
-      box(cx+48,cy+18,z-19,22,12,6,'#b5a26d','#6b603f');
-      silkText(v(cx,cy+55,z-24),'KY-040 · TYŁ PCB',{size:8,color:'#eef8fc'});
-    }
+    box(cx,cy+104,z-22,196,20,11,'#111415','#030404');
+    // kilka małych elementów od strony lutów dla większego realizmu
+    box(cx-52,cy+18,z-19,28,13,6,'#30363a','#111');
+    box(cx+8,cy+18,z-19,22,12,6,'#b5a26d','#6b603f');
+    box(cx+48,cy+18,z-19,22,12,6,'#b5a26d','#6b603f');
+    silkText(v(cx,cy+55,z-24),upper(tr('kyBack','KY-040 · tył PCB')),{size:8,color:'#eef8fc'});
     for(let i=0;i<5;i++){
       const px=cx-78+i*39, py=cy+104;
-      if(!frontVisible){
-        circle3(v(px,py,z-14),7.5,'#cbd1d4','#687176',1.6);
-        circle3(v(px,py,z-15),2.8,C.gold,'#80651e',1);
-        box(px,py,z-40,7,7,52,C.gold,'#80651e');
-        silkText(v(px,py-15,z-24),names[i],{size:7,color:pinColors[i]});
-      }
-      pins.push(v(px,py,z-68));
-      if(!frontVisible) label(v(px,py,z-71),names[i],{size:9,bg:'#fff',stroke:pinColors[i],dy:20});
+      circle3(v(px,py,z-14),7.5,'#cbd1d4','#687176',1.6);
+      circle3(v(px,py,z-15),2.8,C.gold,'#80651e',1);
+      box(px,py,z-40,7,7,52,C.gold,'#80651e');
+      silkText(v(px,py-15,z-24),KY_PIN_NAMES[i],{size:7,color:KY_PIN_COLORS[i]});
+      label(v(px,py,z-71),KY_PIN_NAMES[i],{size:9,bg:'#fff',stroke:KY_PIN_COLORS[i],dy:20});
     }
-    if(!frontVisible) label(v(cx,cy-2,z-47),'PINY / LUTOWANIE OD TYŁU',{size:9,bg:'rgba(20,20,20,.88)',color:'#fff',stroke:'#555'});
-    return { pins, names };
+    label(v(cx,cy-2,z-47),upper(tr('rearPins','Piny / lutowanie od tyłu')),{size:9,bg:'rgba(20,20,20,.88)',color:'#fff',stroke:'#555'});
+  }
+  function drawKYBoard(){
+    const {cx,cy,z,w,h}=KY, frontVisible=kyFront();
+    box(cx,cy,z,w,h,14,C.ky,C.kyEdge);
+    for(const dx of [-w/2+17,w/2-17])for(const dy of [-h/2+17,h/2-17])solder(v(cx+dx,cy+dy,z+8),7);
+    if(!frontVisible)return;
+    box(cx,cy-32,z+25,135,125,35,'#b9c5c9','#617782');
+    for(const dx of [-55,55])box(cx+dx,cy-32,z+45,9,81,5,'#8e9fa7','#516773');
+    cylinder(cx,cy-32,z+43,46,12,'#c1cbd1');
+    cylinder(cx,cy-32,z+55,25,48,'#c1cbd1',true);
+    line([v(cx-16,cy-32,z+104),v(cx+16,cy-32,z+104)],'#6f838e',2);
+    for(let i=0;i<3;i++)smd(cx-49+i*48,cy+57,z+13,20,10);
+    projectedText(v(cx,cy+81,z+9),'KY-040',18,'#e0e8df');
+    for(let i=0;i<5;i++){
+      const x=cx-78+i*39;solder(v(x,cy+104,z+9),5);
+      projectedText(v(x,cy+91,z+10),KY_PIN_NAMES[i],8,'#c4d8d1');
+      circuitTrace([v(x,cy+102,z+8),v(x,cy+68,z+8),v(cx+(i-2)*19,cy+43,z+8)]);
+    }
+    label(v(cx,cy+65,z+18),'KY-040',{size:14,bg:'rgba(20,20,20,.9)',color:'#fff',stroke:'#444'});
   }
 
-  function drawWires(lcd,ky){
-    // Przewody nie mają już etykiet na środku — pełna legenda jest pod modelem.
-    // Dzięki temu napisy nie nachodzą na siebie przy obracaniu.
+  // Trasy przewodów modułów. wire() tylko je przygotowuje; zwrócone obiekty maluje render().
+  function moduleWireItems(){
+    const items=[];
     const lcdTargets=[
       v(colX.A,rowY(15),38), // LCD GND -> a15
       v(colX.A,rowY(13),38), // LCD VCC -> a13
       v(colX.A,rowY(9),38),  // LCD SDA -> a9
       v(colX.A,rowY(10),38)  // LCD SCL -> a10
     ];
-    const lcdColors=[C.black,C.red,C.green,C.blue];
     const lcdLaneX=[-310,-292,-274,-256];
-    lcd.pinPos.forEach((p,i)=>{
+    lcdPins().forEach((p,i)=>{
       const stub=v(p.x,p.y+30+i*10,p.z);
       const lane=v(lcdLaneX[i],stub.y,50+i*4);
       const turn=v(lcdLaneX[i],lcdTargets[i].y,42+i*3);
       currentConn=LCD_IDS[i];
-      wire([p,stub,lane,turn,lcdTargets[i]],lcdColors[i],4);
-      label(p,'LCD '+lcd.pinNames[i],{size:10,bg:'#fff',stroke:lcdColors[i],dy:26,conn:LCD_IDS[i],focusOnly:true});
+      items.push(wire([p,stub,lane,turn,lcdTargets[i]],LCD_PIN_COLORS[i],4));
+      label(p,'LCD '+LCD_PIN_NAMES[i],{size:10,bg:'#fff',stroke:LCD_PIN_COLORS[i],dy:26,conn:LCD_IDS[i],focusOnly:true});
     });
 
     const kyTargets=[
@@ -592,38 +676,41 @@
       v(colX.J,rowY(11),38), // DT -> j11
       v(colX.J,rowY(12),38)  // CLK -> j12
     ];
-    const kyColors=[C.black,C.red,C.cyan,C.purple,C.orange];
     const kyLaneX=[302,326,350,374,398];
-    ky.pins.forEach((p,i)=>{
+    kyPins().forEach((p,i)=>{
       currentConn=KY_IDS[i];
-      label(p,'KY '+ky.names[i],{size:10,bg:'#fff',stroke:kyColors[i],dy:26,conn:KY_IDS[i],focusOnly:true});
+      label(p,'KY '+KY_PIN_NAMES[i],{size:10,bg:'#fff',stroke:KY_PIN_COLORS[i],dy:26,conn:KY_IDS[i],focusOnly:true});
       const stub=v(p.x,p.y+34+i*12,p.z);
       const lane=v(kyLaneX[i],stub.y,52+i*4);
       if(i===1){
         // KY + jest WPIĘTY w b13. Sam kabel od b13 biegnie najpierw poziomo przez okolice c13,
         // tam skręca w dół, a dopiero później idzie do modułu KY-040.
         const lowY=rowY(24);
-        wire([p,stub,lane,v(colX.C,lowY,48),v(colX.C,rowY(13),44),kyTargets[i]],kyColors[i],4);
+        items.push(wire([p,stub,lane,v(colX.C,lowY,48),v(colX.C,rowY(13),44),kyTargets[i]],KY_PIN_COLORS[i],4));
       }else{
         const turn=v(kyLaneX[i],kyTargets[i].y,44+i*3);
-        wire([p,stub,lane,turn,kyTargets[i]],kyColors[i],4);
+        items.push(wire([p,stub,lane,turn,kyTargets[i]],KY_PIN_COLORS[i],4));
       }
     });
     currentConn=null;
+    return items;
   }
 
   function drawTitle(){
-    const width=canvas.getBoundingClientRect().width;
-    ctx.save();ctx.textAlign='left';ctx.textBaseline='top';
-    ctx.fillStyle='#647c8c';ctx.font=`600 10px ${font}`;ctx.fillText('Z A P P E R  /  3 D',24,22);
-    ctx.fillStyle='#203a4b';ctx.font=`600 ${width<500?16:20}px ${font}`;ctx.fillText('MONTAŻ · PŁYTKA + MODUŁY',24,42);
-    ctx.fillStyle='#647c8c';ctx.font=`500 10px ${font}`;ctx.fillText('PINY LCD / KY-040: WIDOK OD TYŁU',24,68);
+    const width=(viewRect||canvas.getBoundingClientRect()).width;
+    // Dla arabskiego i hebrajskiego nagłówek stoi przy prawej krawędzi, jak reszta strony.
+    const rtl=!!(document.documentElement&&document.documentElement.dir==='rtl'),x=rtl?width-24:24;
+    ctx.save();ctx.textAlign=rtl?'right':'left';ctx.textBaseline='top';
+    ctx.fillStyle='#647c8c';ctx.font=`600 10px ${font}`;ctx.fillText('Z A P P E R  /  3 D',x,22);
+    ctx.fillStyle='#203a4b';ctx.font=`600 ${width<500?16:20}px ${font}`;ctx.fillText(upper(tr('title','Montaż · płytka + moduły')),x,42,width-48);
+    ctx.fillStyle='#647c8c';ctx.font=`500 10px ${font}`;ctx.fillText(upper(tr('subtitle','Piny LCD / KY-040: widok od tyłu')),x,68,width-48);
     ctx.strokeStyle='#cedce5';ctx.beginPath();ctx.moveTo(24,88);ctx.lineTo(width-24,88);ctx.stroke();ctx.restore();
   }
 
   function render(){
     const rect=canvas.getBoundingClientRect();
     if(rect.width<2 || rect.height<2) return;
+    viewRect=rect;
     if(state.autoFrame) frameScene();
     const dpr=Math.min(window.devicePixelRatio||1,2);
     const cssW=rect.width, cssH=rect.height;
@@ -635,20 +722,32 @@
     background.addColorStop(0,'#fbfcfb');background.addColorStop(.65,'#eef2f3');background.addColorStop(1,'#d9e3e8');
     ctx.fillStyle=background;ctx.fillRect(0,0,cssW,cssH);
     labelQueue=[];drawnWires=[];
-    footprint(12,16,-43,B.w+4,B.h+4);
-    footprint(-498,-49,-40,340,172);
-    footprint(557,-24,-40,235,250);
-    drawBreadboard();
-    drawNano();
-    const lcd=drawLCD();
-    const ky=drawKY();
-    drawWires(lcd,ky);
-    drawResistor();
-    drawBoardConnectors();
-    // Ponowne narysowanie modułów nad przewodami daje czytelne płytki i prawidłowe końcówki z tyłu.
-    drawNano();
-    drawLCD();
-    drawKY();
+    state.cam=camera();
+    // Kolejność malarza warstwami poziomymi: breadboard (z<0), wszystko na nim (0<z<119),
+    // płytki modułów (z≈125). Warstwy pod kamerą rysujemy od dołu, nad kamerą od góry —
+    // dzięki temu w widoku od tyłu spód płytki zasłania Nano i końcówki przewodów.
+    // W obrębie środkowej warstwy obiekty są sortowane po głębokości środka.
+    const middle=[...moduleWireItems(),...outputItems(),...boardConnectorItems(),
+      {depth:depth(v(14,rowY(9),40)),paint:drawNano},
+      {depth:depth(v(colX.I,rowY(3),28)),paint:drawResistor},
+      {depth:depth(v(LCD.cx+122,LCD.cy+62,90)),paint:drawLCDUnder},
+      {depth:depth(v(KY.cx,KY.cy+104,92)),paint:drawKYUnder}
+    ].sort((a,b)=>a.depth-b.depth);
+    const modules=[{depth:depth(v(LCD.cx,LCD.cy,LCD.z)),paint:drawLCDBoard},{depth:depth(v(KY.cx,KY.cy,KY.z)),paint:drawKYBoard}].sort((a,b)=>a.depth-b.depth);
+    const paintAll=list=>{for(const item of list)item.paint();};
+    const camZ=state.cam.z;
+    if(camZ>0){
+      footprint(12,16,-43,B.w+4,B.h+4);
+      footprint(-498,-49,-40,340,172);
+      footprint(557,-24,-40,235,250);
+      drawBreadboard(true);
+      if(camZ>127){paintAll(middle);paintAll(modules);}
+      else{paintAll(modules);paintAll(middle);}
+    }else{
+      paintAll(modules);
+      paintAll(middle);
+      drawBreadboard(false);
+    }
     drawFocus();
     drawLabels();
     drawTitle();
@@ -656,6 +755,7 @@
 
   function setView(name){
     state.autoFrame=false;
+    viewRect=canvas.getBoundingClientRect();
     for(const button of document.querySelectorAll('[data-wiring-view]')) button.setAttribute('aria-pressed',String(button.dataset.wiringView===name));
     if(name==='top'){ state.yaw=0; state.pitch=0; state.zoom=.82; state.panX=0; state.panY=10; }
     else if(name==='rear'){ state.yaw=Math.PI; state.pitch=0.34; state.zoom=.80; state.panX=0; state.panY=20; }
@@ -749,6 +849,9 @@
     render();
   });
   new ResizeObserver(render).observe(scene||canvas);
+  // guide-i18n.js podmienia teksty asynchronicznie — po tłumaczeniu rysujemy scenę ponownie.
+  if(hasTextHost&&typeof MutationObserver!=='undefined')
+    new MutationObserver(()=>render()).observe(textHost,{characterData:true,childList:true,subtree:true});
   if(steps.length)syncFocus();
   render();
 })();
