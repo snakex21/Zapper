@@ -2,6 +2,32 @@
 
 All notable public changes to Zapper are documented here.
 
+## 10.4.3 — 2026-11-14
+
+### Device guide
+
+- Redesigned the device guide with a table of contents and a dedicated safety card; the safety section is now always shown first.
+- The safety tab stays pinned first in the guide contents, and an overflowing tab bar now shows a fade and scrolls with the mouse wheel (including RTL).
+- Retranslated the guide from the Polish source into all 29 other languages, safety section first, fixing machine-translation errors in electronics terms.
+
+### 3D wiring view
+
+- Correct depth sorting of modules, wires and labels, including the breadboard plane as an occluder.
+- Legend highlighting of individual connections, a step-by-step wiring mode and wires rendered as 3D tubes.
+- Translated canvas text and cleaner label placement that keeps short pin names such as SW, DT and +.
+
+### Localization
+
+- Device status messages are now translated.
+- Counters use proper plural forms for each language.
+- The native window title is localized and follows language changes.
+- Terminology fixes, including consistent translation of "płytka" as the circuit board.
+- Portuguese UI normalized to European Portuguese (pt-PT).
+
+### Data
+
+- JSON data files with a UTF-8 BOM are now read correctly.
+
 ## 10.4.2 — 2026-08-31
 
 ### Startup
