@@ -1771,7 +1771,7 @@ function renderDeviceSessions() {
     const orderWarning = localizedOlderWarning(older);
     const secondary = [progress, orderWarning].filter(Boolean).join(" · ");
     const startLabel = plan.paused ? uiText("resume") : older ? uiText("outOfOrder") : uiText("sendToBoard");
-    return `<article class="device-session-row">
+    return `<article class="device-session-row${!plan.available && !plan.paused ? " is-waiting" : ""}">
       <div><strong>${escapeHTML(plan.profile_name)}</strong><span>${escapeHTML(plan.overdue ? uiFormat("dynOverdueFrom", { date: formatShortDate(plan.planned_date) }) : (plan.phase_name || uiText("noPhase")))}</span></div>
       <div><strong>${escapeHTML(plan.program)}</strong><span>${escapeHTML(secondary || plan.note || "")}</span>${secondary && plan.note ? `<span>${escapeHTML(plan.note)}</span>` : ""}</div>
       <div class="device-step-summary">${plan.paused
@@ -1813,7 +1813,9 @@ function renderDeviceStatus() {
     : "—";
   const activePanel = document.getElementById("active-session-panel");
   if (activePanel) activePanel.remove();
-  document.getElementById("device-connection-message").textContent = deviceStatus.last_error || deviceStatus.message || uiText("selectBoardPort");
+  // Domyślny komunikat backendu dla rozłączonej płytki jest po polsku — pokazujemy jego tłumaczenie.
+  const idleMessage = deviceStatus.state === "disconnected" && !deviceStatus.connected ? uiText("selectBoardPort") : deviceStatus.message;
+  document.getElementById("device-connection-message").textContent = deviceStatus.last_error || idleMessage || uiText("selectBoardPort");
   document.getElementById("device-last-message").textContent = deviceStatus.message || uiText("noCommunication");
   document.getElementById("connect-device").disabled = Boolean(deviceStatus.connected) || recovering;
   document.getElementById("disconnect-device").disabled = !deviceStatus.connected && !recovering;
