@@ -79,7 +79,7 @@ func main() {
 		AutoFocus: true,
 		DataPath:  filepath.Join(appDirectory, "data", "webview2"),
 		WindowOptions: webview2.WindowOptions{
-			Title:  "Zapper — plan i dziennik",
+			Title:  defaultWindowTitle,
 			Width:  uint(savedWindow.Width),
 			Height: uint(savedWindow.Height),
 			Center: true,
@@ -133,6 +133,14 @@ func main() {
 	})
 	mustBind(window, "apiLoadSettings", func() (AppSettings, error) {
 		return loadAppSettings(appDirectory)
+	})
+	// Tytuł okna Windows w języku interfejsu: i18n.js wywołuje to po każdej
+	// zmianie języka (WebView2 nie przenosi document.title na pasek okna).
+	mustBind(window, "apiSetWindowTitle", func(title string) {
+		title = nativeWindowTitle(title)
+		window.Dispatch(func() {
+			window.SetTitle(title)
+		})
 	})
 	mustBind(window, "apiSetLanguage", func(language string, source string) (AppSettings, error) {
 		return saveAppSettings(appDirectory, AppSettings{Language: language, LanguageSource: source})

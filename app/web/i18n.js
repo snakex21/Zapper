@@ -638,9 +638,19 @@
       document.body.classList.toggle("rtl-ui", meta.dir === "rtl");
       const translatedTitle = phrase("title");
       if (document.title !== translatedTitle) document.title = translatedTitle;
+      syncNativeTitle(translatedTitle);
     } finally {
       applying = false;
     }
+  }
+
+  // Pasek tytułu okna Windows nie śledzi document.title w WebView2 — ustawiamy go
+  // przez Go (SetWindowTextW), tylko gdy tekst faktycznie się zmienił.
+  let nativeTitle = "";
+  function syncNativeTitle(title) {
+    if (!title || title === nativeTitle || typeof window.apiSetWindowTitle !== "function") return;
+    nativeTitle = title;
+    Promise.resolve(window.apiSetWindowTitle(title)).catch(() => { nativeTitle = ""; });
   }
 
   function startObserver() {
