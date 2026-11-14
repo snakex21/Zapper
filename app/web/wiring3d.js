@@ -78,10 +78,12 @@
     return v(-1100*cp*sy, 1100*sp, 1100*cp*cy);
   }
   const depth=p=>rot(p).z;   // większa wartość = bliżej kamery
-  // Płaskie przesłony: breadboard (górna płaszczyzna) i płytki obu modułów.
+  // Płaskie przesłony: breadboard (górna i dolna płaszczyzna — razem łapią też promienie
+  // przechodzące przez boczną ściankę) oraz płytki obu modułów.
   // Punkt jest zasłonięty, gdy odcinek kamera→punkt przecina prostokąt przesłony.
   const OCCLUDERS=[
     {x0:-170,x1:170,y0:-315,y1:315,z:0},
+    {x0:-170,x1:170,y0:-315,y1:315,z:-28},
     {x0:-690,x1:-350,y0:-166,y1:6,z:125},
     {x0:417.5,x1:652.5,y0:-180,y1:70,z:130}
   ];
