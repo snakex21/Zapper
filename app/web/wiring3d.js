@@ -276,15 +276,16 @@
     }
     // 2. Opisy modułów i przewodów: przesuwane w pionie, aż znajdą wolne miejsce.
     for(const item of items){
-      if(item.opts.side||item.text.length<=2)continue;
+      if(item.opts.side||item.opts.coord)continue;
       const {q,opts,w,h}=item,desiredX=q.x+(opts.dx||0),desiredY=q.y+(opts.dy||0);
       const x=Math.max(w/2+8,Math.min(rect.width-w/2-8,desiredX));let y=desiredY;
       for(let i=0;i<24&&hits(x,y,w,h);i++)y=desiredY+(i%2?1:-1)*(Math.floor(i/2)+1)*(h+3);
       paint(item,x,Math.max(top+h/2,Math.min(bottom-h/2,y)));
     }
-    // 3. Współrzędne A–J / 1–30 tylko tam, gdzie niczego nie zasłaniają.
+    // 3. Współrzędne A–J / 1–30 (opts.coord) tylko tam, gdzie niczego nie zasłaniają.
+    //    Krótkie nazwy pinów („SW”, „DT”, „+”) są zwykłymi opisami z kroku 2.
     for(const item of items){
-      if(item.opts.side||item.text.length>2)continue;
+      if(item.opts.side||!item.opts.coord)continue;
       const {q,opts,w,h}=item,x=Math.max(w/2+8,Math.min(rect.width-w/2-8,q.x+(opts.dx||0))),y=q.y+(opts.dy||0);
       if(y<top+h/2||y>bottom-h/2||hits(x,y,w,h))continue;
       paint(item,x,y);
@@ -397,14 +398,14 @@
     // labels
     for(const l of letters){
       projectedText(v(colX[l],B.y+8,5),l,11,'#7b8b90');
-      label(v(colX[l],B.y-1,8),l,{size:11,bg:'rgba(255,255,255,.88)',dy:-7});
+      label(v(colX[l],B.y-1,8),l,{size:11,bg:'rgba(255,255,255,.88)',dy:-7,coord:true});
     }
     for(let r=1;r<=30;r+=1){
       if(r===1||r===2||r===5||r===9||r===10||r===11||r===12||r===13||r===15||r===16||r%5===0){
         projectedText(v(B.x+9,rowY(r),5),String(r),9,'#7b8b90');
         projectedText(v(B.x+B.w-9,rowY(r),5),String(r),9,'#7b8b90');
-        label(v(B.x-12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:-10});
-        label(v(B.x+B.w+12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:10});
+        label(v(B.x-12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:-10,coord:true});
+        label(v(B.x+B.w+12,rowY(r),8),String(r),{size:10,bg:'rgba(255,255,255,.84)',dx:10,coord:true});
       }
     }
     silkText(v(0,rowY(28),8),'A–J / 1–30',{size:9,color:'#657985'});
