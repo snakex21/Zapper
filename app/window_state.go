@@ -16,7 +16,7 @@ type windowState struct {
 
 func loadWindowState(appDirectory string) windowState {
 	state := windowState{Width: 1380, Height: 860}
-	data, err := os.ReadFile(filepath.Join(appDirectory, "data", "window.json"))
+	data, err := readJSONFile(filepath.Join(appDirectory, "data", "window.json"))
 	if err != nil {
 		return state
 	}

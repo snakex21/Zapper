@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	cryptorand "crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
@@ -48,8 +49,26 @@ func migrateDataFile(appDirectory, dataDirectory, name string) error {
 	return nil
 }
 
-func loadJSON(path string, target any) error {
+// utf8BOM to znacznik kolejności bajtów, który dopisuje np. Notatnik Windows
+// przy zapisie "UTF-8 z BOM". encoding/json go nie akceptuje ("invalid
+// character 'ï'"), więc każdy odczyt plików danych JSON go usuwa.
+var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
+
+func stripUTF8BOM(data []byte) []byte {
+	return bytes.TrimPrefix(data, utf8BOM)
+}
+
+// readJSONFile czyta plik danych JSON i usuwa ewentualny BOM UTF-8.
+func readJSONFile(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return stripUTF8BOM(data), nil
+}
+
+func loadJSON(path string, target any) error {
+	data, err := readJSONFile(path)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ def fail(message):
 
 def load_json(path):
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception as exc:
         fail(f"{path}: {exc}")
 

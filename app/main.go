@@ -333,7 +333,7 @@ func startAssetServer(appDirectory string) (*http.Server, string, error) {
 				filepath.Join(appDirectory, "locales", fileName),
 			}
 			for _, candidate := range candidates {
-				data, readErr := os.ReadFile(candidate)
+				data, readErr := readJSONFile(candidate)
 				if readErr != nil {
 					if os.IsNotExist(readErr) {
 						continue

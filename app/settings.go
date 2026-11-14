@@ -40,7 +40,7 @@ func appSettingsPath(appDirectory string) string {
 
 func loadAppSettings(appDirectory string) (AppSettings, error) {
 	path := appSettingsPath(appDirectory)
-	data, err := os.ReadFile(path)
+	data, err := readJSONFile(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return AppSettings{}, nil
 	}
