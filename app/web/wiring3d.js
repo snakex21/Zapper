@@ -244,11 +244,33 @@
     };
     const hits=(x,y,w,h)=>occupied.some(r=>Math.abs(x-r.x)<(w+r.w)/2+3&&Math.abs(y-r.y)<(h+r.h)/2+3);
     const top=96,bottom=rect.height-10;
-    // Rzut płytek LCD i KY-040 na ekran: kolumny opisów omijają je w pionie.
-    const modules=[[-520,-80,125,340,172],[535,-55,130,235,250]].map(([cx,cy,cz,w,h])=>{
-      const c=[];for(const x of [cx-w/2,cx+w/2])for(const y of [cy-h/2,cy+h/2])for(const z of [cz-8,cz+8])c.push(project(v(x,y,z)));
-      return {x0:Math.min(...c.map(p=>p.x)),x1:Math.max(...c.map(p=>p.x)),y0:Math.min(...c.map(p=>p.y)),y1:Math.max(...c.map(p=>p.y))};
-    });
+    // Rzeczywisty obrys modułów LCD i KY-040 na ekranie (otoczka wypukła płytki, a dla KY-040
+    // także obudowy i gałki). Prostokąt otaczający przechylonej płytki byłby dużo większy
+    // i niepotrzebnie odpychałby kolumny opisów daleko od ich punktów.
+    const hull=pts=>{
+      pts=pts.slice().sort((a,b)=>a.x-b.x||a.y-b.y);
+      const cross=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x),lower=[],upper=[];
+      for(const p of pts){while(lower.length>1&&cross(lower[lower.length-2],lower[lower.length-1],p)<=0)lower.pop();lower.push(p);}
+      for(const p of pts.reverse()){while(upper.length>1&&cross(upper[upper.length-2],upper[upper.length-1],p)<=0)upper.pop();upper.push(p);}
+      return lower.slice(0,-1).concat(upper.slice(0,-1));
+    };
+    const corners=(cx,cy,w,h,zs)=>{const c=[];for(const x of [cx-w/2,cx+w/2])for(const y of [cy-h/2,cy+h/2])for(const z of zs)c.push(project(v(x,y,z)));return c;};
+    const modules=[
+      hull(corners(-520,-80,340,172,[117,133])),
+      hull([...corners(535,-55,235,250,[121,139]),...(state.cam.z>KY.z?corners(535,-87,135,125,[172]).concat(corners(535,-87,50,50,[235])):[])])
+    ];
+    // Test osi rozdzielającej: prostokąt opisu kontra wypukły obrys modułu.
+    const overlaps=(x0,y0,x1,y1,poly)=>{
+      if(Math.max(...poly.map(p=>p.x))<x0||Math.min(...poly.map(p=>p.x))>x1||Math.max(...poly.map(p=>p.y))<y0||Math.min(...poly.map(p=>p.y))>y1)return false;
+      const rectPts=[{x:x0,y:y0},{x:x1,y:y0},{x:x1,y:y1},{x:x0,y:y1}];
+      for(let i=0;i<poly.length;i++){
+        const a=poly[i],b=poly[(i+1)%poly.length],nx=b.y-a.y,ny=a.x-b.x;
+        const proj=pts=>pts.map(p=>p.x*nx+p.y*ny);
+        const P=proj(poly),R=proj(rectPts);
+        if(Math.max(...R)<Math.min(...P)||Math.min(...R)>Math.max(...P))return false;
+      }
+      return true;
+    };
 
     // 1. Opisy otworów płytki: dwie kolumny po bokach breadboardu, posortowane w pionie,
     //    każdy z linią prowadzącą — nigdy nie nachodzą na siebie ani na płytkę.
@@ -262,12 +284,13 @@
       let column=toLeft?Math.min(...corners,...group.map(item=>item.q.x))-26:Math.max(...corners,...group.map(item=>item.q.x))+26;
       column=toLeft?Math.max(maxW+8,column):Math.min(rect.width-maxW-8,column);
       // Zwraca nowe y pod modułem, jeśli opis (o swojej szerokości) wszedłby na płytkę LCD/KY-040.
+      // Zwraca y o jeden wiersz niżej, jeśli opis wszedłby na obrys modułu; null, gdy miejsce jest wolne.
       const free=(item,y)=>{
         const x0=toLeft?column-item.w:column,x1=toLeft?column:column+item.w;
-        for(const r of modules)if(x0<r.x1&&x1>r.x0&&y+item.h/2>r.y0-gap&&y-item.h/2<r.y1+gap)return r.y1+gap+item.h/2;
+        for(const poly of modules)if(overlaps(x0,y-item.h/2-gap,x1,y+item.h/2+gap,poly))return y+item.h/2+gap;
         return null;
       };
-      let y=-Infinity;const ys=group.map(item=>{y=Math.max(item.q.y,y+item.h+gap);for(let n,i=0;i<4&&(n=free(item,y))!==null;i++)y=n;return y;});
+      let y=-Infinity;const ys=group.map(item=>{y=Math.max(item.q.y,y+item.h+gap);for(let n,i=0;i<60&&(n=free(item,y))!==null;i++)y=n;return y;});
       const overflow=ys[ys.length-1]+group[group.length-1].h/2-bottom;
       let shift=overflow>0?Math.min(overflow,Math.max(0,ys[0]-group[0].h/2-top)):0;
       // Dociągnięcie w górę nie może wepchnąć kolumny z powrotem na moduł.
