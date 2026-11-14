@@ -196,10 +196,10 @@ func main() {
 			return device.Status(), planErr
 		}
 		if plan.Done {
-			return device.Status(), fmt.Errorf("ta sesja jest już wykonana")
+			return device.Status(), newDeviceError("devErrSessionAlreadyDone", nil)
 		}
 		if !plan.Available {
-			return device.Status(), fmt.Errorf("sesja jest jeszcze niedostępna: %s", plan.BlockedReason)
+			return device.Status(), newDeviceError("devErrSessionUnavailable", map[string]string{"reason": plan.BlockedReason})
 		}
 		return device.Start(plan.SessionID, plan.ProfileName, plan.DeviceSteps)
 	})
@@ -265,7 +265,7 @@ func main() {
 	mustBind(window, "apiDeviceResumeManual", func(restart bool) (DeviceStatus, error) {
 		steps, ok := device.ManualResumeSteps(restart)
 		if !ok {
-			return device.Status(), errors.New("brak wstrzymanej sesji ręcznej")
+			return device.Status(), newDeviceError("devErrNoManualPause", nil)
 		}
 		return device.Start("", "", steps)
 	})

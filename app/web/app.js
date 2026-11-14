@@ -206,6 +206,26 @@ function uiFormat(key, values = {}, fallback = key) {
   return value;
 }
 
+// Licznik z poprawną formą mnogą (Intl.PluralRules) — np. "1 krok", "2 kroki",
+// "5 kroków" / "1 step", "2 steps". Klucze: <baseKey>_<kategoria>.
+function uiPlural(baseKey, count, values = {}) {
+  const value = window.ZapperI18n?.plural?.(baseKey, count, values);
+  if (value && !value.startsWith(`${baseKey}_`)) return value;
+  return `${count}`;
+}
+
+// Komunikat backendu urządzenia: klucz + parametry tłumaczone w interfejsie,
+// polski tekst z pola message/last_error tylko jako ostatni fallback.
+function deviceMessageText(key, params, fallback) {
+  if (key) {
+    const values = {};
+    for (const [name, value] of Object.entries(params || {})) values[name] = localizedSource(String(value ?? ""));
+    const text = uiFormat(key, values, "");
+    if (text) return text;
+  }
+  return fallback ? localizedSource(fallback) : "";
+}
+
 function localizedSource(source) {
   return window.ZapperI18n?.translateSource(source) || source;
 }
@@ -220,7 +240,7 @@ function localizedTodaySummary(total, completed, overdue, remainingSeconds) {
 }
 
 function localizedPlannedContext(plan) {
-  const values = { date: formatShortDate(plan.planned_date), days: Number(plan.extension_days || 0) };
+  const values = { date: formatShortDate(plan.planned_date), days: uiPlural("countDays", Number(plan.extension_days || 0)) };
   return uiFormat(plan.extension_days ? "dynPlannedDateExtended" : "dynPlannedDate", values);
 }
 
@@ -1047,11 +1067,7 @@ function personIDInputError(id) {
 }
 
 function personCountLabel(count) {
-  if (count === 1) return "Dodano 1 osobę";
-  const rest = count % 100;
-  const last = count % 10;
-  if (last >= 2 && last <= 4 && !(rest >= 12 && rest <= 14)) return `Dodano ${count} osoby`;
-  return `Dodano ${count} osób`;
+  return uiPlural("countPeopleAdded", count);
 }
 
 async function addPerson(event) {
@@ -1357,7 +1373,7 @@ async function previewAIImport(event) {
     validatedAIPersonID = preview.persons?.[0]?.person_id || "";
     document.getElementById("ai-import-preview").innerHTML = (preview.persons || []).map(person => `<div class="ai-import-preview-person">
       <strong>${escapeHTML(person.person_name)} · <code>${escapeHTML(person.person_id)}</code></strong>
-      <span>${escapeHTML(uiFormat("dynProgramPhaseDays", { programs: person.program_count, phases: person.phase_count, days: person.total_days }))}</span>
+      <span>${escapeHTML([uiPlural("countPrograms", person.program_count), uiPlural("countPhases", person.phase_count), uiPlural("countDays", person.total_days)].join(" · "))}</span>
       ${person.replaces_active ? `<em>${escapeHTML(uiText("activeProgramWillArchive"))}</em>` : ""}
       <ul>${(person.summary || []).map(item => `<li>${escapeHTML(item)}</li>`).join("")}</ul>
       ${renderImportWarnings(person.warnings)}
@@ -1777,7 +1793,7 @@ function renderDeviceSessions() {
       <div class="device-step-summary">${plan.paused
         ? escapeHTML(uiFormat("dynPausedDuration", { remaining: formatDuration(plan.remaining_seconds || duration) }))
         : plan.available
-          ? (steps.length ? `${seriesProgress ? `${seriesProgress} · ` : ""}${escapeHTML(uiFormat("dynStepsDuration", { count: steps.length, duration: formatDuration(duration) }))}` : escapeHTML(uiText("noSteps")))
+          ? (steps.length ? `${seriesProgress ? `${seriesProgress} · ` : ""}${escapeHTML(`${uiPlural("countSteps", steps.length)} · ${formatDuration(duration)}`)}` : escapeHTML(uiText("noSteps")))
           : scheduleWaitingMarkup(plan)}</div>
       <div class="device-session-actions"><button class="button primary" data-device-session="${escapeAttribute(plan.session_id)}" data-profile-name="${escapeAttribute(plan.profile_name)}" data-paused="${Boolean(plan.paused)}" data-out-of-order="${older > 0}" data-has-steps="${steps.length > 0}" data-available="${Boolean(plan.available)}" ${steps.length && plan.available ? "" : "disabled"}>${escapeHTML(startLabel)}</button>${plan.paused ? `<button class="button secondary" data-cancel-pause="${escapeAttribute(plan.session_id)}">${escapeHTML(uiText("startOver"))}</button>` : ""}<button class="button text-danger" data-dismiss-session-group="${escapeAttribute(plan.session_id)}">${escapeHTML(uiText("dismissTerm"))}</button></div>
     </article>`;
@@ -1813,10 +1829,13 @@ function renderDeviceStatus() {
     : "—";
   const activePanel = document.getElementById("active-session-panel");
   if (activePanel) activePanel.remove();
-  // Domyślny komunikat backendu dla rozłączonej płytki jest po polsku — pokazujemy jego tłumaczenie.
-  const idleMessage = deviceStatus.state === "disconnected" && !deviceStatus.connected ? uiText("selectBoardPort") : deviceStatus.message;
-  document.getElementById("device-connection-message").textContent = deviceStatus.last_error || idleMessage || uiText("selectBoardPort");
-  document.getElementById("device-last-message").textContent = deviceStatus.message || uiText("noCommunication");
+  // Backend wysyła klucz komunikatu i parametry (message_key/message_params);
+  // tłumaczymy je tutaj, a polski tekst message jest tylko awaryjnym fallbackiem.
+  const statusMessage = deviceMessageText(deviceStatus.message_key, deviceStatus.message_params, deviceStatus.message);
+  const lastError = deviceMessageText(deviceStatus.last_error_key, deviceStatus.last_error_params, deviceStatus.last_error);
+  const idleMessage = deviceStatus.state === "disconnected" && !deviceStatus.connected ? uiText("selectBoardPort") : statusMessage;
+  document.getElementById("device-connection-message").textContent = lastError || idleMessage || uiText("selectBoardPort");
+  document.getElementById("device-last-message").textContent = statusMessage || uiText("noCommunication");
   document.getElementById("connect-device").disabled = Boolean(deviceStatus.connected) || recovering;
   document.getElementById("disconnect-device").disabled = !deviceStatus.connected && !recovering;
   document.getElementById("start-manual-device").disabled = !ready || busy;
@@ -2670,7 +2689,7 @@ function renderArchivedPhase(phase, index) {
   return `<div class="archive-phase-record">
     <span>${escapeHTML(uiText("phaseFallback", "Phase"))} ${index + 1}</span>
     <strong>${escapeHTML(phase.name || uiText("unnamed", "Unnamed"))}</strong>
-    <p>${escapeHTML(uiFormat("dynPhaseDurationMode", { days: Number(phase.duration_days || 0), mode }))}</p>
+    <p>${escapeHTML(`${uiPlural("countDays", Number(phase.duration_days || 0))} · ${mode}`)}</p>
   </div>`;
 }
 
@@ -2690,7 +2709,7 @@ function renderFrequencies() {
   const t = key => window.ZapperI18n?.t(key) || key;
   document.getElementById("frequency-count").textContent = query
     ? uiFormat("dynCatalogFiltered", { shown: entries.length, total: catalog.length })
-    : uiFormat("dynCatalogCount", { count: entries.length });
+    : uiPlural("countCatalogItems", entries.length);
   document.getElementById("frequency-list").innerHTML = entries.length ? entries.map(item => `<article class="frequency-row">
     <strong>${escapeHTML(item.name)}</strong>
     <span class="frequency-value">${escapeHTML(item.frequency)}</span>
@@ -2780,8 +2799,9 @@ function toast(message, isError = false) {
 
 function normalizeError(error) {
   if (!error) return uiText("unknownError", "An unknown error occurred.");
-  if (typeof error === "string") return error;
-  return error.message || String(error);
+  // Błędy z backendu przychodzą jako polski tekst szablonu — tłumaczymy go.
+  if (typeof error === "string") return localizedSource(error);
+  return localizedSource(error.message || String(error));
 }
 
 function statusText(status, done) {

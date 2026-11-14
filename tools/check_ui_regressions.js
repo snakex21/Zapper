@@ -124,3 +124,105 @@ test("Piped i18n introspection emits complete JSON", () => {
   assert.ok(Object.keys(data.text).length > 400);
   assert.ok(output.length > 65536);
 });
+
+// --- i18n: formy mnogie i komunikaty urządzenia z backendu -----------------
+function loadI18nRuntime() {
+  const i18nSource = fs.readFileSync(path.join(root, "app/web/i18n.js"), "utf8");
+  const window = { dispatchEvent() {} };
+  const context = vm.createContext({
+    window, Intl, console,
+    document: {},
+    Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 },
+    NodeFilter: {},
+    MutationObserver: function MutationObserver() {},
+    CustomEvent: function CustomEvent() {},
+    fetch: async url => {
+      const match = String(url).match(/^\/locale\/ui\/([a-z]+)$/);
+      const file = match && path.join(root, "locales", `ui.${match[1]}.json`);
+      if (!file || !fs.existsSync(file)) return { ok: false, status: 404 };
+      const data = JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
+      return { ok: true, json: async () => data };
+    }
+  });
+  vm.runInContext(i18nSource, context);
+  return window.ZapperI18n;
+}
+
+test("Step counter uses Intl.PluralRules forms (pl/en exact)", () => {
+  const i18n = loadI18nRuntime();
+  const pl = n => i18n.plural("countSteps", n, {}, "pl");
+  assert.equal(pl(1), "1 krok");
+  assert.equal(pl(2), "2 kroki");
+  assert.equal(pl(4), "4 kroki");
+  assert.equal(pl(5), "5 kroków");
+  assert.equal(pl(12), "12 kroków");
+  assert.equal(pl(22), "22 kroki");
+  assert.equal(i18n.plural("countSteps", 1, {}, "en"), "1 step");
+  assert.equal(i18n.plural("countSteps", 3, {}, "en"), "3 steps");
+  assert.equal(i18n.plural("countDays", 1, {}, "pl"), "1 dzień");
+  assert.equal(i18n.plural("countDays", 3, {}, "pl"), "3 dni");
+  assert.equal(i18n.plural("countPeopleAdded", 1, {}, "pl"), "Dodano 1 osobę");
+  assert.equal(i18n.plural("countPeopleAdded", 3, {}, "pl"), "Dodano 3 osoby");
+  assert.equal(i18n.plural("countPeopleAdded", 5, {}, "pl"), "Dodano 5 osób");
+  assert.equal(i18n.plural("countCatalogItems", 1, {}, "en"), "1 item in the catalog");
+});
+
+test("Plural counters distinguish forms in every language that has them", async () => {
+  const i18n = loadI18nRuntime();
+  const bases = ["countSteps", "countDays", "countPrograms", "countPhases", "countCatalogItems", "countPeopleAdded"];
+  for (const code of Object.keys(i18n.languages)) {
+    await i18n.loadLanguage(code);
+    for (const base of bases) {
+      for (const n of [0, 1, 2, 3, 5, 11, 12, 21, 22, 25, 101]) {
+        const text = i18n.plural(base, n, {}, code);
+        assert.ok(text.includes(String(n)), `${code}/${base}(${n}) must contain the number: ${text}`);
+        assert.ok(!text.includes("{count}"), `${code}/${base}(${n}) left a placeholder: ${text}`);
+      }
+    }
+  }
+  // Języki, w których 1, 2 i 5 to trzy różne kategorie CLDR, muszą mieć trzy różne formy.
+  for (const code of ["pl", "ru", "uk", "cs", "sk"]) {
+    const forms = [1, 2, 5].map(n => i18n.plural("countSteps", n, {}, code).replace(/\d+/, "#"));
+    assert.equal(new Set(forms).size, 3, `${code}: ${forms.join(" | ")}`);
+  }
+  for (const code of ["en", "de", "fr", "es", "it", "nl"]) {
+    const forms = [1, 2].map(n => i18n.plural("countSteps", n, {}, code).replace(/\d+/, "#"));
+    assert.notEqual(forms[0], forms[1], `${code}: singular and plural must differ`);
+  }
+});
+
+test("Backend device messages are translated by key and by Polish error template", async () => {
+  const i18n = loadI18nRuntime();
+  await i18n.loadLanguage("de");
+  assert.equal(i18n.phrase("devBoardReady", "pl"), "Płytka gotowa");
+  assert.equal(i18n.phrase("devBoardReady", "en"), "Board ready");
+  assert.notEqual(i18n.phrase("devBoardReady", "de"), "Płytka gotowa");
+  // Odrzucone wywołanie apiDevice* zwraca polski tekst szablonu — tłumaczymy go z parametrami.
+  const en = i18n.translateSource("nie można otworzyć COM7: Access is denied.", "en");
+  assert.equal(en, "Cannot open COM7: Access is denied.");
+  assert.equal(i18n.translateSource("krok 3 ma częstotliwość poza zakresem 0,1 Hz–4 MHz", "en"),
+    "Step 3 has a frequency outside the 0.1 Hz–4 MHz range");
+  const de = i18n.translateSource("płytka nie jest połączona", "de");
+  assert.equal(de, i18n.phrase("devErrNotConnected", "de"));
+  assert.ok(!/płytka/.test(de));
+  assert.equal(i18n.translateSource("płytka nie jest połączona", "pl"), "płytka nie jest połączona");
+});
+
+test("Device view renders message_key/message_params instead of Polish text", () => {
+  const f = fixture();
+  const i18n = loadI18nRuntime();
+  i18n.setLanguage = () => "en";
+  f.window.ZapperI18n = i18n;
+  f.run(`deviceStatus = {
+    state: "error", connected: true, ready: true, port: "COM3",
+    message: "Nie udało się wysłać sesji", message_key: "devSendFailed",
+    last_error: 'błąd wysyłania "CLEAR": timeout', last_error_key: "devErrSendCommand",
+    last_error_params: { command: '"CLEAR"', error: "timeout" }
+  }`);
+  assert.equal(f.run(`deviceMessageText(deviceStatus.message_key, deviceStatus.message_params, deviceStatus.message)`), "Could not send the session");
+  assert.equal(f.run(`deviceMessageText(deviceStatus.last_error_key, deviceStatus.last_error_params, deviceStatus.last_error)`), 'Error sending "CLEAR": timeout');
+  // Surowa linia protokołu (bez klucza) zostaje bez zmian.
+  assert.equal(f.run(`deviceMessageText("", null, "STATE RUNNING 1 2 7830 1000")`), "STATE RUNNING 1 2 7830 1000");
+  assert.equal(f.run(`uiPlural("countSteps", 1)`), "1 step");
+  assert.equal(f.run(`uiPlural("countSteps", 4)`), "4 steps");
+});

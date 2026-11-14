@@ -157,7 +157,6 @@
     dynIdNoSpaces: ["ID „{id}” nie może zawierać spacji", "ID “{id}” cannot contain spaces"],
     dynIdChars: ["ID „{id}” może zawierać tylko litery a-z, cyfry, podkreślenie i myślnik", "ID “{id}” may contain only a-z letters, digits, underscore and hyphen"],
     dynIdTooLong: ["ID „{id}” jest za długie (maksymalnie 40 znaków)", "ID “{id}” is too long (maximum 40 characters)"],
-    dynPeopleAdded: ["Dodano {count} osób", "Added {count} people"],
     dynAddPeopleFailed: ["Nie udało się dodać wszystkich osób: {error}", "Could not add all people: {error}"],
     dynPermanentId: ["Stałe ID {id} pozostaje bez zmian.", "Permanent ID {id} remains unchanged."],
     dynFinishDeleteProgram: ["Najpierw zakończ lub usuń program „{name}”, dopiero potem można usunąć tę osobę.", "Finish or delete program “{name}” before deleting this person."],
@@ -193,21 +192,17 @@
     dynTodaySummary: ["sesji: {total} · wykonane: {completed} · pozostało {remaining}", "sessions: {total} · completed: {completed} · {remaining} remaining"],
     dynTodaySummaryOverdue: ["sesji: {total} · wykonane: {completed} · zaległe: {overdue} · pozostało {remaining}", "sessions: {total} · completed: {completed} · overdue: {overdue} · {remaining} remaining"],
     dynPlannedDate: ["Planowana: {date}", "Planned: {date}"],
-    dynPlannedDateExtended: ["Planowana: {date} · program +{days} dni", "Planned: {date} · program +{days} days"],
+    dynPlannedDateExtended: ["Planowana: {date} · program +{days}", "Planned: {date} · program +{days}"],
     dynGroupCompleted: ["{done}/{total} wykonane", "{done}/{total} completed"],
     dynOverdueFrom: ["Zaległa z {date}", "Overdue from {date}"],
-    dynStepsDuration: ["{count} kroków · {duration}", "{count} steps · {duration}"],
     dynPausedDuration: ["Wstrzymana · pozostało {remaining}", "Paused · {remaining} remaining"],
     dynProfileOverdueCount: ["{name}: zaległych sesji {count}", "{name}: {count} overdue sessions"],
     dynHistoryPerformed: ["wykonanych sesji: {count}", "completed sessions: {count}"],
     dynHistoryPerformedExtra: ["wykonanych sesji: {count} · wpisów poza planem: {extra}", "completed sessions: {count} · extra entries: {extra}"],
     dynPartialExecution: ["Częściowe wykonanie: {done} z {total} — zostało {remaining}. Sesja czeka na dokończenie.", "Partial completion: {done} of {total} — {remaining} remaining. The session is waiting to be finished."],
     dynPhaseDays: ["{phases} faz · {days} dni · {sessions} wykonanych sesji", "{phases} phases · {days} days · {sessions} completed sessions"],
-    dynPhaseDurationMode: ["{days} dni · {mode}", "{days} days · {mode}"],
-    dynCatalogCount: ["{count} pozycji w katalogu", "{count} items in catalog"],
     dynCatalogFiltered: ["{shown} z {total} pozycji", "{shown} of {total} items"],
     dynActiveProgramSessions: ["wykonanych sesji: {count}", "completed sessions: {count}"],
-    dynProgramPhaseDays: ["{programs} programów · {phases} faz · {days} dni", "{programs} programs · {phases} phases · {days} days"],
     dynPlanPeriodImpossible: ["Sesje są planowane {period}, a minimalny odstęp między pełnymi sesjami wynosi {gap} min. Zmniejsz odstęp do najwyżej {max} min albo zwiększ liczbę dni przerwy.", "Sessions are scheduled {period}, while the minimum gap between complete sessions is {gap} min. Reduce the gap to at most {max} min or increase the number of rest days."],
     dynPlanPeriodTight: ["Minimalny odstęp {gap} min jest dokładnie równy okresowi planu ({period}). Sesje trzeba wykonywać co do minuty — każde opóźnienie przesunie kolejną sesję na następny dzień.", "The minimum gap of {gap} min exactly equals the schedule period ({period}). Sessions must be performed exactly on time — any delay will move the next session to the following day."],
     dynBlockedOverdue: ["Najpierw wykonaj zaległą sesję z {date}", "First complete the overdue session from {date}"],
@@ -225,7 +220,84 @@
     saveProfileFirst: ["Najpierw zapisz profil", "Save the profile first"], emptyProgramCreated: ["Utworzono pusty program dla wybranej osoby", "An empty program was created for the selected person"], programMovedArchive: ["Program przeniesiono do archiwum", "Program moved to archive"],
     deleteStep: ["Usuń krok", "Delete step"], addDeviceStep: ["Dodaj krok urządzenia", "Add device step"],
     sessionSingular: ["Sesja", "Session"], connectionWord: ["połączenie", "connection"], intervalWord: ["interwał", "interval"],
-    diagnosticsTitle: ["Błąd aplikacji (skopiuj i prześlij)", "Application error (copy and send)"], resourceLoadFailed: ["nie udało się załadować zasobu", "failed to load resource"]
+    diagnosticsTitle: ["Błąd aplikacji (skopiuj i prześlij)", "Application error (copy and send)"], resourceLoadFailed: ["nie udało się załadować zasobu", "failed to load resource"],
+    // Komunikaty stanu i błędy urządzenia (klucze z app/device_messages.go).
+    devSelectPort: ["Wybierz port urządzenia", "Select the device port"],
+    devWaitingReady: ["Oczekiwanie na READY po resecie płytki", "Waiting for READY after the board reset"],
+    devDisconnected: ["Urządzenie odłączone", "Device disconnected"],
+    devSendingSession: ["Wysyłanie sesji do płytki", "Sending the session to the board"],
+    devStoppingSession: ["Zatrzymywanie sesji", "Stopping the session"],
+    devPausingSession: ["Wstrzymywanie sesji", "Pausing the session"],
+    devSendFailed: ["Nie udało się wysłać sesji", "Could not send the session"],
+    devCommLost: ["Przerwana komunikacja — ponawiam połączenie", "Communication interrupted — reconnecting"],
+    devPortRecovered: ["Port odzyskany — czekam na płytkę", "Port recovered — waiting for the board"],
+    devRecoveryFailed: ["Nie udało się automatycznie odzyskać połączenia", "Could not recover the connection automatically"],
+    devBoardReady: ["Płytka gotowa", "Board ready"],
+    devBoardResetRearm: ["Płytka wróciła po resecie — przygotowuję sesję ponownie", "The board is back after a reset — preparing the session again"],
+    devStoppedOnBoard: ["Sesja zatrzymana na płytce", "Session stopped on the board"],
+    devSessionArmed: ["Sesja gotowa — potwierdź ją na płytce", "Session ready — confirm it on the board"],
+    devTimeoutRearm: ["Płytka zakończyła oczekiwanie — przygotowuję sesję ponownie", "The board stopped waiting — preparing the session again"],
+    devCancelledTimeout: ["Sesja anulowana po czasie oczekiwania", "Session cancelled after the waiting time ran out"],
+    devCancelledOnBoard: ["Sesja anulowana na płytce", "Session cancelled on the board"],
+    devSessionDone: ["Sesja zakończona", "Session finished"],
+    devBoardError: ["Płytka zgłosiła błąd", "The board reported an error"],
+    devConnectionRecovered: ["Połączenie odzyskane — sprawdzam oczekującą sesję", "Connection recovered — checking the pending session"],
+    devConnectionActive: ["Połączenie aktywne", "Connection active"],
+    devConfirmedStarting: ["Potwierdzenie odebrane — uruchamianie", "Confirmation received — starting"],
+    devErrListPorts: ["nie można odczytać portów COM: {error}", "Cannot read COM ports: {error}"],
+    devErrSelectCom: ["wybierz port COM", "Select a COM port"],
+    devErrOpenPort: ["nie można otworzyć {port}: {error}", "Cannot open {port}: {error}"],
+    devErrNotConnected: ["płytka nie jest połączona", "The board is not connected"],
+    devErrNotReady: ["płytka nie zgłosiła jeszcze READY", "The board has not reported READY yet"],
+    devErrBusy: ["płytka ma już przygotowaną lub trwającą sesję", "The board already has a prepared or running session"],
+    devErrNothingToPause: ["nie trwa sesja profilu, którą można wstrzymać", "No profile session is running that could be paused"],
+    devErrNotRunning: ["sesja nie jest obecnie uruchomiona", "The session is not currently running"],
+    devErrRemainingUnknown: ["nie udało się ustalić pozostałej części sesji", "Could not determine the remaining part of the session"],
+    devErrNoSteps: ["sesja nie ma kroków dla urządzenia", "The session has no device steps"],
+    devErrTooManySteps: ["urządzenie obsługuje maksymalnie {max} kroków", "The device supports at most {max} steps"],
+    devErrStepFrequency: ["krok {step} ma częstotliwość poza zakresem 0,1 Hz–4 MHz", "Step {step} has a frequency outside the 0.1 Hz–4 MHz range"],
+    devErrStepDuration: ["krok {step} ma czas poza zakresem 1 s–24 h", "Step {step} has a duration outside the 1 s–24 h range"],
+    devErrSendCommand: ["błąd wysyłania {command}: {error}", "Error sending {command}: {error}"],
+    devErrSessionAlreadyDone: ["ta sesja jest już wykonana", "This session has already been completed"],
+    devErrSessionUnavailable: ["sesja jest jeszcze niedostępna: {reason}", "The session is not available yet: {reason}"],
+    devErrNoManualPause: ["brak wstrzymanej sesji ręcznej", "There is no paused manual session"],
+    // Liczniki z formami mnogimi: klucz_<kategoria Intl.PluralRules>.
+    countSteps_zero: ["{count} kroków", "{count} steps"],
+    countSteps_one: ["{count} krok", "{count} step"],
+    countSteps_two: ["{count} kroków", "{count} steps"],
+    countSteps_few: ["{count} kroki", "{count} steps"],
+    countSteps_many: ["{count} kroków", "{count} steps"],
+    countSteps_other: ["{count} kroku", "{count} steps"],
+    countDays_zero: ["{count} dni", "{count} days"],
+    countDays_one: ["{count} dzień", "{count} day"],
+    countDays_two: ["{count} dni", "{count} days"],
+    countDays_few: ["{count} dni", "{count} days"],
+    countDays_many: ["{count} dni", "{count} days"],
+    countDays_other: ["{count} dnia", "{count} days"],
+    countPrograms_zero: ["{count} programów", "{count} programs"],
+    countPrograms_one: ["{count} program", "{count} program"],
+    countPrograms_two: ["{count} programów", "{count} programs"],
+    countPrograms_few: ["{count} programy", "{count} programs"],
+    countPrograms_many: ["{count} programów", "{count} programs"],
+    countPrograms_other: ["{count} programu", "{count} programs"],
+    countPhases_zero: ["{count} faz", "{count} phases"],
+    countPhases_one: ["{count} faza", "{count} phase"],
+    countPhases_two: ["{count} faz", "{count} phases"],
+    countPhases_few: ["{count} fazy", "{count} phases"],
+    countPhases_many: ["{count} faz", "{count} phases"],
+    countPhases_other: ["{count} fazy", "{count} phases"],
+    countCatalogItems_zero: ["{count} pozycji w katalogu", "{count} items in the catalog"],
+    countCatalogItems_one: ["{count} pozycja w katalogu", "{count} item in the catalog"],
+    countCatalogItems_two: ["{count} pozycji w katalogu", "{count} items in the catalog"],
+    countCatalogItems_few: ["{count} pozycje w katalogu", "{count} items in the catalog"],
+    countCatalogItems_many: ["{count} pozycji w katalogu", "{count} items in the catalog"],
+    countCatalogItems_other: ["{count} pozycji w katalogu", "{count} items in the catalog"],
+    countPeopleAdded_zero: ["Dodano {count} osób", "Added {count} people"],
+    countPeopleAdded_one: ["Dodano {count} osobę", "Added {count} person"],
+    countPeopleAdded_two: ["Dodano {count} osób", "Added {count} people"],
+    countPeopleAdded_few: ["Dodano {count} osoby", "Added {count} people"],
+    countPeopleAdded_many: ["Dodano {count} osób", "Added {count} people"],
+    countPeopleAdded_other: ["Dodano {count} osoby", "Added {count} people"]
   };
 
   const PACKS = {
@@ -367,8 +439,70 @@
     return result;
   }
 
+  // Formy mnogie: klucz bazowy + kategoria Intl.PluralRules danego języka
+  // (zero/one/two/few/many/other), np. countSteps_one = "{count} krok",
+  // countSteps_few = "{count} kroki", countSteps_many = "{count} kroków".
+  const pluralRulesCache = new Map();
+  function pluralCategory(count, language = currentLanguage) {
+    const locale = (LANGUAGES[normalize(language)] || LANGUAGES.en).locale;
+    let rules = pluralRulesCache.get(locale);
+    if (!rules) {
+      try {
+        rules = new Intl.PluralRules(locale);
+      } catch (error) {
+        rules = new Intl.PluralRules("en-US");
+      }
+      pluralRulesCache.set(locale, rules);
+    }
+    return rules.select(Number(count));
+  }
+
+  function pluralPhrase(baseKey, count, values = {}, language = currentLanguage) {
+    language = normalize(language);
+    const category = pluralCategory(count, language);
+    const key = TEXT[`${baseKey}_${category}`] ? `${baseKey}_${category}` : `${baseKey}_other`;
+    return formatPhrase(key, { ...values, count }, language);
+  }
+
+  // Błędy backendu (np. odrzucone wywołania apiDevice*) przychodzą jako polski
+  // tekst z szablonu w app/device_messages.go. Dopasowujemy go do szablonów
+  // devErr*/dev* z TEXT i tłumaczymy razem z parametrami.
+  let deviceTemplates = null;
+  function deviceTemplateMatchers() {
+    if (deviceTemplates) return deviceTemplates;
+    const escape = value => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    deviceTemplates = Object.entries(TEXT)
+      .filter(([key, pair]) => /^dev[A-Z]/.test(key) && pair[0].includes("{"))
+      .map(([key, pair]) => {
+        const names = [];
+        const pattern = pair[0].split(/(\{[A-Za-z0-9_]+\})/).map(part => {
+          const name = part.match(/^\{([A-Za-z0-9_]+)\}$/);
+          if (!name) return escape(part);
+          names.push(name[1]);
+          return "([\\s\\S]+?)";
+        }).join("");
+        return { key, names, regex: new RegExp(`^${pattern}$`) };
+      });
+    return deviceTemplates;
+  }
+
+  function translateDeviceTemplate(source, language) {
+    for (const { key, names, regex } of deviceTemplateMatchers()) {
+      const match = source.match(regex);
+      if (!match) continue;
+      const values = {};
+      names.forEach((name, index) => {
+        values[name] = translateSource(match[index + 1], language);
+      });
+      return formatPhrase(key, values, language);
+    }
+    return null;
+  }
+
   function translateDynamicSource(source, language) {
     if (language === "pl") return source;
+    const deviceText = translateDeviceTemplate(source, language);
+    if (deviceText !== null) return deviceText;
     const rules = [
       [/^Najpierw wykonaj zaległą sesję z (.+)$/, m => formatPhrase("dynBlockedOverdue", { date: m[1] }, language)],
       [/^Najpierw wykonaj część (\d+) z (\d+)$/, m => formatPhrase("dynBlockedPart", { part: m[1], total: m[2] }, language)],
@@ -377,7 +511,7 @@
       [/^ID „(.+)” nie może zawierać spacji$/, m => formatPhrase("dynIdNoSpaces", { id: m[1] }, language)],
       [/^ID „(.+)” może zawierać tylko litery a-z, cyfry, podkreślenie i myślnik$/, m => formatPhrase("dynIdChars", { id: m[1] }, language)],
       [/^ID „(.+)” jest za długie \(maksymalnie 40 znaków\)$/, m => formatPhrase("dynIdTooLong", { id: m[1] }, language)],
-      [/^Dodano (\d+) osób$/, m => formatPhrase("dynPeopleAdded", { count: m[1] }, language)],
+      [/^Dodano (\d+) (?:osobę|osoby|osób)$/, m => pluralPhrase("countPeopleAdded", Number(m[1]), {}, language)],
       [/^Nie udało się dodać wszystkich osób: (.+)$/, m => formatPhrase("dynAddPeopleFailed", { error: m[1] }, language)],
       [/^Stałe ID (.+) pozostaje bez zmian\.$/, m => formatPhrase("dynPermanentId", { id: m[1] }, language)],
       [/^Najpierw zakończ lub usuń program „(.+)”, dopiero potem można usunąć tę osobę\.$/, m => formatPhrase("dynFinishDeleteProgram", { name: m[1] }, language)],
@@ -409,19 +543,19 @@
       [/^(\d+) .+ · kliknij wpis, aby zobaczyć zapisany plan$/, m => formatPhrase("dynCompletedProgramsHint", { count: m[1] }, language)],
       [/^(\d+) (?:sesja|sesje|sesji) · (\d+) wykonane · pozostało (.+)$/, m => formatPhrase("dynTodaySummary", { total: m[1], completed: m[2], remaining: m[3] }, language)],
       [/^(\d+) (?:sesja|sesje|sesji) · (\d+) wykonane · (\d+) zaległe · pozostało (.+)$/, m => formatPhrase("dynTodaySummaryOverdue", { total: m[1], completed: m[2], overdue: m[3], remaining: m[4] }, language)],
-      [/^Planowana: (.+) · program \+(\d+) (?:dzień|dni)$/, m => formatPhrase("dynPlannedDateExtended", { date: m[1], days: m[2] }, language)],
+      [/^Planowana: (.+) · program \+(\d+) (?:dzień|dni|dnia)$/, m => formatPhrase("dynPlannedDateExtended", { date: m[1], days: pluralPhrase("countDays", Number(m[2]), {}, language) }, language)],
       [/^Planowana: (.+)$/, m => formatPhrase("dynPlannedDate", { date: m[1] }, language)],
       [/^(\d+)\/(\d+) wykonane$/, m => formatPhrase("dynGroupCompleted", { done: m[1], total: m[2] }, language)],
       [/^Zaległa z (.+)$/, m => formatPhrase("dynOverdueFrom", { date: m[1] }, language)],
-      [/^(\d+) (?:krok|kroki|kroków) · (.+)$/, m => formatPhrase("dynStepsDuration", { count: m[1], duration: m[2] }, language)],
+      [/^(\d+) (?:krok|kroki|kroków|kroku) · (.+)$/, m => `${pluralPhrase("countSteps", Number(m[1]), {}, language)} · ${m[2]}`],
       [/^Wstrzymana · pozostało (.+)$/, m => formatPhrase("dynPausedDuration", { remaining: m[1] }, language)],
       [/^(.+): (\d+) (?:zaległa sesja|zaległe sesje|zaległych sesji)$/, m => formatPhrase("dynProfileOverdueCount", { name: m[1], count: m[2] }, language)],
       [/^(\d+) (?:wykonana sesja|wykonane sesje|wykonanych sesji)$/, m => formatPhrase("dynHistoryPerformed", { count: m[1] }, language)],
       [/^(\d+) (?:wykonana sesja|wykonane sesje|wykonanych sesji) · (\d+) (?:wpis poza planem|wpisy poza planem|wpisów poza planem)$/, m => formatPhrase("dynHistoryPerformedExtra", { count: m[1], extra: m[2] }, language)],
       [/^Częściowe wykonanie: (.+) z (.+) — zostało (.+)\. Sesja czeka na dokończenie\.$/, m => formatPhrase("dynPartialExecution", { done: m[1], total: m[2], remaining: m[3] }, language)],
       [/^(\d+) (?:faza|fazy|faz) · (\d+) (?:dzień|dni) · (\d+) wykonanych sesji$/, m => formatPhrase("dynPhaseDays", { phases: m[1], days: m[2], sessions: m[3] }, language)],
-      [/^(\d+) dni · (.+)$/, m => formatPhrase("dynPhaseDurationMode", { days: m[1], mode: translateSource(m[2], language) }, language)],
-      [/^(\d+) pozycji w katalogu$/, m => formatPhrase("dynCatalogCount", { count: m[1] }, language)],
+      [/^(\d+) (?:dzień|dni|dnia) · (.+)$/, m => `${pluralPhrase("countDays", Number(m[1]), {}, language)} · ${translateSource(m[2], language)}`],
+      [/^(\d+) (?:pozycja|pozycje|pozycji) w katalogu$/, m => pluralPhrase("countCatalogItems", Number(m[1]), {}, language)],
       [/^(\d+) z (\d+) pozycji$/, m => formatPhrase("dynCatalogFiltered", { shown: m[1], total: m[2] }, language)]
     ];
     for (const [pattern, replacement] of rules) {
@@ -553,6 +687,9 @@
     apply,
     phrase,
     t: phrase,
+    format: formatPhrase,
+    plural: pluralPhrase,
+    pluralCategory,
     translateSource,
     populateSelect,
     get language() { return currentLanguage; },
