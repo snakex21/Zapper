@@ -89,7 +89,8 @@
             top: 0;
             height: 100vh;
             overflow-y: auto;
-            padding: clamp(18px, 3vw, 40px) 14px 24px 18px;
+            --toc-pad-top: clamp(18px, 3vw, 40px);
+            padding: var(--toc-pad-top) 14px 24px 18px;
             border-inline-end: 1px solid var(--line);
             background: var(--surface);
             scrollbar-width: thin;
@@ -142,6 +143,22 @@
             mask: var(--icon-alert) center / contain no-repeat;
         }
         .guide-toc .toc-safety > a.active { background: var(--danger-soft); color: var(--danger); }
+        /* Zasady bezpieczeństwa zawsze pierwsze i zawsze widoczne w spisie treści,
+           niezależnie od długości nagłówków w danym języku. */
+        .guide-toc .toc-safety {
+            order: -1;
+            position: sticky;
+            /* Przyklejona nad górnym odstępem kolumny, żeby przewijane pozycje
+               nie prześwitywały nad kartą bezpieczeństwa. */
+            top: calc(-1 * var(--toc-pad-top));
+            z-index: 1;
+            margin: calc(-1 * var(--toc-pad-top)) 0 8px;
+            padding-top: var(--toc-pad-top);
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
+            background: var(--surface);
+        }
+        .guide-toc .toc-safety > a { padding-inline-start: 36px; }
 
         /* --- Nagłówek dokumentu --- */
         .guide-hero {
@@ -509,11 +526,39 @@
                 backdrop-filter: blur(8px);
                 scrollbar-width: none;
             }
-            .guide-toc ol { display: flex; gap: 6px; }
+            /* max-content: lista ma pełną szerokość kart, więc przyklejona karta
+               bezpieczeństwa nie „wyjeżdża” razem z węższym blokiem listy. */
+            .guide-toc ol { display: flex; gap: 6px; width: max-content; min-width: 100%; }
             .guide-toc li { flex: none; margin: 0 !important; }
             .guide-toc .toc-h3:not(.toc-safety) { display: none; }
             .guide-toc a { padding: 6px 12px 6px 8px; border: 1px solid var(--line); background: var(--paper); white-space: nowrap; }
             .guide-toc .toc-safety > a { padding-inline-start: 36px; border-color: var(--danger-line); }
+            /* Pasek przewijany poziomo: karta bezpieczeństwa przyklejona na początku,
+               a wygaszona krawędź pokazuje, że za nią są kolejne karty. */
+            .guide-toc .toc-safety {
+                top: auto;
+                margin-top: 0;
+                /* -12px = wewnętrzny odstęp paska: tło karty zakrywa też ten pas,
+                   żeby przewijane karty nie wystawały zza karty bezpieczeństwa. */
+                inset-inline-start: -12px;
+                margin-inline-start: -12px !important;
+                padding: 0;
+                padding-inline-start: 12px;
+                padding-inline-end: 6px;
+                border-bottom: 0;
+                background: #f5f6f2;
+                transition: box-shadow .15s ease;
+            }
+            .guide-toc.toc-more-start .toc-safety { box-shadow: 10px 0 10px -8px rgba(30, 40, 30, .28); }
+            [dir="rtl"] .guide-toc.toc-more-start .toc-safety { box-shadow: -10px 0 10px -8px rgba(30, 40, 30, .28); }
+            .guide-toc.toc-more-end {
+                -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
+                mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent);
+            }
+            [dir="rtl"] .guide-toc.toc-more-end {
+                -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 48px), transparent);
+                mask-image: linear-gradient(to left, #000 calc(100% - 48px), transparent);
+            }
             .real3d-scene, .svg-wiring-viewer { height: clamp(420px, 66vh, 680px); }
         }
         @media (max-width: 700px) {
@@ -1397,14 +1442,56 @@ void updateProgressBar() {
         current = active;
         const link = links.get(active);
         link.classList.add('active');
-        // Przewijamy tylko sam pasek/kolumnę spisu, nigdy stronę.
-        const horizontal = toc.scrollWidth > toc.clientWidth;
-        if (horizontal) toc.scrollLeft = link.offsetLeft - toc.clientWidth / 2 + link.offsetWidth / 2;
-        else toc.scrollTop = link.offsetTop - toc.clientHeight / 2;
+        // Przewijamy tylko sam pasek/kolumnę spisu, nigdy stronę. Liczymy z
+        // getBoundingClientRect, więc działa też w RTL (ujemne scrollLeft).
+        // W wąskim pasku podrozdziały (h3) są ukryte — pokazujemy ich rozdział.
+        let shown = link;
+        for (let i = headings.indexOf(active); i >= 0 && !shown.getClientRects().length; i--) shown = links.get(headings[i]);
+        const tocBox = toc.getBoundingClientRect();
+        const linkBox = shown.getBoundingClientRect();
+        if (isHorizontal()) {
+            // Środkujemy w obszarze obok przyklejonej karty bezpieczeństwa, żeby
+            // aktywna karta nigdy nie chowała się pod nią.
+            const rtl = getComputedStyle(toc).direction === 'rtl';
+            let start = tocBox.left, end = tocBox.right;
+            const pinned = list.querySelector('.toc-safety');
+            if (pinned && !pinned.contains(shown)) {
+                const pinnedBox = pinned.getBoundingClientRect();
+                if (rtl) end = pinnedBox.left; else start = pinnedBox.right;
+            }
+            // Karta szersza niż wolne miejsce: pokazujemy jej początek tuż obok
+            // karty bezpieczeństwa zamiast środka.
+            if (linkBox.width > end - start - 12) toc.scrollLeft += rtl ? linkBox.right - (end - 6) : linkBox.left - (start + 6);
+            else toc.scrollLeft += (linkBox.left + linkBox.width / 2) - (start + end) / 2;
+        }
+        else toc.scrollTop += (linkBox.top + linkBox.height / 2) - (tocBox.top + tocBox.height / 2);
+        edges();
     }
+    function isHorizontal() { return toc.scrollWidth > toc.clientWidth + 1; }
+    // Wskaźniki przepełnienia paska: cień przy przyklejonej karcie bezpieczeństwa
+    // (coś schowało się pod nią) i wygaszona krawędź końcowa (są dalsze karty).
+    function edges() {
+        const horizontal = isHorizontal();
+        const offset = Math.abs(toc.scrollLeft);
+        toc.classList.toggle('toc-more-start', horizontal && offset > 1);
+        toc.classList.toggle('toc-more-end', horizontal && offset + toc.clientWidth < toc.scrollWidth - 1);
+    }
+    toc.addEventListener('scroll', edges, { passive: true });
+    // Kółko myszy nad paskiem przewija karty w poziomie zamiast strony.
+    toc.addEventListener('wheel', function (event) {
+        if (!isHorizontal() || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+        const rtl = getComputedStyle(toc).direction === 'rtl';
+        const before = toc.scrollLeft;
+        toc.scrollLeft += rtl ? -event.deltaY : event.deltaY;
+        // Na końcu paska oddajemy kółko stronie.
+        if (toc.scrollLeft !== before) event.preventDefault();
+    }, { passive: false });
     window.addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(spy); } }, { passive: true });
-    window.addEventListener('resize', spy);
+    window.addEventListener('resize', function () { spy(); edges(); });
+    // Tłumaczenie zmienia długość kart — odśwież wskaźniki po każdej podmianie tekstu.
+    new MutationObserver(edges).observe(list, { childList: true, characterData: true, subtree: true });
     spy();
+    edges();
 })();
 </script>
 <script src="/wiring3d.js"></script>
